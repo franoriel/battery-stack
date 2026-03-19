@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a1a">
+  <link rel="manifest" href="manifest.json">
+  <title>Battery Stack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --surface: #242424;
+      --surface-raised: #2e2e2e;
+      --border: #3a3a3a;
+      --text: #e8e4df;
+      --text-dim: #8a8580;
+      --text-muted: #5a5550;
+      --low: #d4655e;
+      --low-bg: rgba(212,101,94,0.12);
+      --mid: #d4a95e;
+      --mid-bg: rgba(212,169,94,0.12);
+      --full: #6db589;
+      --full-bg: rgba(109,181,137,0.12);
+      --accent: #8eafc2;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      overflow-x: hidden;
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+    }
+
+    /* ── NAV ── */
+    .nav {
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px;
+      background: var(--bg);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav button {
+      flex: 1;
+      padding: 10px 12px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-dim);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .nav button.active {
+      background: var(--surface-raised);
+      color: var(--text);
+    }
+
+    /* ── VIEWS ── */
+    .view { display: none; padding: 8px 16px 100px; }
+    .view.active { display: block; }
+
+    /* ── LOG VIEW ── */
+    .header {
+      text-align: center;
+      padding: 8px 0 20px;
+    }
+    .header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+    .header .time {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    .batteries {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .battery-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 16px;
+      border: 1px solid var(--border);
+      transition: border-color 0.3s;
+    }
+    .battery-card.selected { border-color: var(--text-muted); }
+
+    .battery-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .battery-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    .battery-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .levels {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .level-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-dim);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      text-align: left;
+    }
+    .level-btn .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+    .level-btn[data-level="3"] .dot { background: var(--full); }
+    .level-btn[data-level="2"] .dot { background: var(--mid); }
+    .level-btn[data-level="1"] .dot { background: var(--low); }
+
+    .level-btn.active[data-level="3"] { background: var(--full-bg); border-color: var(--full); color: var(--text); }
+    .level-btn.active[data-level="2"] { background: var(--mid-bg); border-color: var(--mid); color: var(--text); }
+    .level-btn.active[data-level="1"] { background: var(--low-bg); border-color: var(--low); color: var(--text); }
+    .level-btn.active .dot { transform: scale(1.3); }
+
+    /* note */
+    .note-section { margin-bottom: 16px; }
+    .note-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 0;
+      border: none;
+      background: none;
+      color: var(--text-dim);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .note-toggle .arrow { transition: transform 0.2s; font-size: 11px; }
+    .note-toggle .arrow.open { transform: rotate(90deg); }
+    .note-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      resize: none;
+      outline: none;
+      margin-top: 6px;
+      display: none;
+    }
+    .note-input.visible { display: block; }
+    .note-input:focus { border-color: var(--text-muted); }
+    .note-input::placeholder { color: var(--text-muted); }
+
+    /* save */
+    .save-btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--surface-raised);
+      color: var(--text-dim);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .save-btn.ready {
+      background: var(--accent);
+      color: var(--bg);
+    }
+    .save-btn.saved {
+      background: var(--full);
+      color: var(--bg);
+    }
+
+    @keyframes ripple {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    /* ── HISTORY VIEW ── */
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .history-entry {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+    }
+    .history-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .history-date {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .history-delete {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
+    .history-bars {
+      display: flex;
+      gap: 8px;
+    }
+    .history-bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .history-bar-track {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: var(--surface-raised);
+      overflow: hidden;
+    }
+    .history-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+    .history-bar-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .history-note {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-dim);
+      font-style: italic;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state .emoji { font-size: 32px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; line-height: 1.6; }
+
+    /* ── TRENDS VIEW ── */
+    .trend-section {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 16px;
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+    .trend-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    .trend-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 80px;
+    }
+    .trend-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .trend-bar {
+      width: 100%;
+      border-radius: 4px;
+      min-height: 4px;
+      transition: height 0.4s ease;
+    }
+    .trend-day-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+    .trend-legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .trend-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .trend-legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* ── EXPORT ── */
+    .export-section {
+      padding: 20px 0;
+    }
+    .export-btn {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text-dim);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .export-btn:active { background: var(--surface-raised); }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface-raised);
+      color: var(--text);
+      padding: 12px 24px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 200;
+      border: 1px solid var(--border);
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <button class="active" data-view="log">Log</button>
+    <button data-view="history">History</button>
+    <button data-view="trends">Trends</button>
+  </nav>
+
+  <!-- LOG VIEW -->
+  <div id="log-view" class="view active">
+    <div class="header">
+      <h1>Battery Stack</h1>
+      <div class="time" id="current-time"></div>
+    </div>
+
+    <div class="batteries">
+      <div class="battery-card" data-battery="sensory">
+        <div class="battery-label">
+          <div class="battery-icon" style="background:rgba(142,175,194,0.15)">👁</div>
+          <span class="battery-name">Sensory</span>
+        </div>
+        <div class="levels">
+          <button class="level-btn" data-level="3"><span class="dot"></span>Full</button>
+          <button class="level-btn" data-level="2"><span class="dot"></span>Mid</button>
+          <button class="level-btn" data-level="1"><span class="dot"></span>Low</button>
+        </div>
+      </div>
+
+      <div class="battery-card" data-battery="social">
+        <div class="battery-label">
+          <div class="battery-icon" style="background:rgba(212,169,94,0.15)">👥</div>
+          <span class="battery-name">Social</span>
+        </div>
+        <div class="levels">
+          <button class="level-btn" data-level="3"><span class="dot"></span>Full</button>
+          <button class="level-btn" data-level="2"><span class="dot"></span>Mid</button>
+          <button class="level-btn" data-level="1"><span class="dot"></span>Low</button>
+        </div>
+      </div>
+
+      <div class="battery-card" data-battery="cognitive">
+        <div class="battery-label">
+          <div class="battery-icon" style="background:rgba(109,181,137,0.15)">🧠</div>
+          <span class="battery-name">Cognitive</span>
+        </div>
+        <div class="levels">
+          <button class="level-btn" data-level="3"><span class="dot"></span>Full</button>
+          <button class="level-btn" data-level="2"><span class="dot"></span>Mid</button>
+          <button class="level-btn" data-level="1"><span class="dot"></span>Low</button>
+        </div>
+      </div>
+
+      <div class="battery-card" data-battery="physical">
+        <div class="battery-label">
+          <div class="battery-icon" style="background:rgba(212,101,94,0.15)">⚡</div>
+          <span class="battery-name">Physical</span>
+        </div>
+        <div class="levels">
+          <button class="level-btn" data-level="3"><span class="dot"></span>Full</button>
+          <button class="level-btn" data-level="2"><span class="dot"></span>Mid</button>
+          <button class="level-btn" data-level="1"><span class="dot"></span>Low</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="note-section">
+      <button class="note-toggle" id="note-toggle">
+        <span class="arrow" id="note-arrow">▶</span> Add a note (optional)
+      </button>
+      <textarea class="note-input" id="note-input" rows="2" placeholder="Context, triggers, what helped..."></textarea>
+    </div>
+
+    <button class="save-btn" id="save-btn" disabled>Select your levels</button>
+  </div>
+
+  <!-- HISTORY VIEW -->
+  <div id="history-view" class="view">
+    <div class="history-list" id="history-list"></div>
+  </div>
+
+  <!-- TRENDS VIEW -->
+  <div id="trends-view" class="view">
+    <div id="trends-content"></div>
+    <div class="export-section">
+      <button class="export-btn" id="export-btn">📋 Copy as Markdown (for Obsidian)</button>
+    </div>
+    <div class="export-section" style="padding-top:0">
+      <button class="export-btn" id="export-csv-btn">📊 Download CSV</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ──
+const BATTERIES = ['sensory', 'social', 'cognitive', 'physical'];
+const LEVEL_LABELS = { 1: 'Low', 2: 'Mid', 3: 'Full' };
+const LEVEL_COLORS = { 1: '#d4655e', 2: '#d4a95e', 3: '#6db589' };
+const BATTERY_COLORS = {
+  sensory: '#8eafc2',
+  social: '#d4a95e',
+  cognitive: '#6db589',
+  physical: '#d4655e'
+};
+
+let currentLevels = {};
+let entries = JSON.parse(localStorage.getItem('battery-entries') || '[]');
+
+// ── CLOCK ──
+function updateTime() {
+  const now = new Date();
+  const opts = { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+  document.getElementById('current-time').textContent = now.toLocaleDateString('en-US', opts);
+}
+updateTime();
+setInterval(updateTime, 30000);
+
+// ── NAV ──
+document.querySelectorAll('.nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`${btn.dataset.view}-view`).classList.add('active');
+    if (btn.dataset.view === 'history') renderHistory();
+    if (btn.dataset.view === 'trends') renderTrends();
+  });
+});
+
+// ── LEVEL SELECTION ──
+document.querySelectorAll('.battery-card').forEach(card => {
+  const battery = card.dataset.battery;
+  card.querySelectorAll('.level-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const level = parseInt(btn.dataset.level);
+      // Toggle off if same level tapped again
+      if (currentLevels[battery] === level) {
+        delete currentLevels[battery];
+        card.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+        card.classList.remove('selected');
+      } else {
+        currentLevels[battery] = level;
+        card.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        card.classList.add('selected');
+      }
+      updateSaveBtn();
+    });
+  });
+});
+
+function updateSaveBtn() {
+  const btn = document.getElementById('save-btn');
+  const count = Object.keys(currentLevels).length;
+  if (count === 0) {
+    btn.disabled = true;
+    btn.textContent = 'Select your levels';
+    btn.classList.remove('ready');
+  } else {
+    btn.disabled = false;
+    btn.textContent = count === 4 ? 'Log Entry' : `Log Entry (${count}/4)`;
+    btn.classList.add('ready');
+  }
+}
+
+// ── NOTE TOGGLE ──
+document.getElementById('note-toggle').addEventListener('click', () => {
+  const input = document.getElementById('note-input');
+  const arrow = document.getElementById('note-arrow');
+  input.classList.toggle('visible');
+  arrow.classList.toggle('open');
+  if (input.classList.contains('visible')) input.focus();
+});
+
+// ── SAVE ──
+document.getElementById('save-btn').addEventListener('click', () => {
+  if (Object.keys(currentLevels).length === 0) return;
+
+  const entry = {
+    id: Date.now(),
+    timestamp: new Date().toISOString(),
+    levels: { ...currentLevels },
+    note: document.getElementById('note-input').value.trim() || null
+  };
+
+  entries.unshift(entry);
+  save();
+
+  // Visual feedback
+  const btn = document.getElementById('save-btn');
+  btn.classList.remove('ready');
+  btn.classList.add('saved');
+  btn.textContent = '✓ Logged';
+
+  setTimeout(() => {
+    // Reset form
+    currentLevels = {};
+    document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.battery-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('note-input').value = '';
+    document.getElementById('note-input').classList.remove('visible');
+    document.getElementById('note-arrow').classList.remove('open');
+    btn.classList.remove('saved');
+    updateSaveBtn();
+  }, 1200);
+
+  showToast('Battery levels logged');
+});
+
+// ── PERSIST ──
+function save() {
+  localStorage.setItem('battery-entries', JSON.stringify(entries));
+}
+
+// ── HISTORY ──
+function renderHistory() {
+  const container = document.getElementById('history-list');
+  if (entries.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="emoji">🔋</div>
+        <p>No entries yet.<br>Log your first battery check!</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = entries.slice(0, 50).map(entry => {
+    const d = new Date(entry.timestamp);
+    const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+    const bars = BATTERIES.map(b => {
+      const level = entry.levels[b];
+      const pct = level ? (level / 3 * 100) : 0;
+      const color = level ? LEVEL_COLORS[level] : '#3a3a3a';
+      return `
+        <div class="history-bar-group">
+          <div class="history-bar-track">
+            <div class="history-bar-fill" style="width:${pct}%;background:${color}"></div>
+          </div>
+          <span class="history-bar-label">${b.slice(0,3)}</span>
+        </div>`;
+    }).join('');
+
+    const noteHtml = entry.note ? `<div class="history-note">${escHtml(entry.note)}</div>` : '';
+
+    return `
+      <div class="history-entry">
+        <div class="history-meta">
+          <span class="history-date">${dateStr} · ${timeStr}</span>
+          <button class="history-delete" onclick="deleteEntry(${entry.id})" aria-label="Delete">×</button>
+        </div>
+        <div class="history-bars">${bars}</div>
+        ${noteHtml}
+      </div>`;
+  }).join('');
+}
+
+function deleteEntry(id) {
+  if (!confirm('Delete this entry?')) return;
+  entries = entries.filter(e => e.id !== id);
+  save();
+  renderHistory();
+  showToast('Entry deleted');
+}
+
+// ── TRENDS ──
+function renderTrends() {
+  const container = document.getElementById('trends-content');
+  if (entries.length < 2) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="emoji">📊</div>
+        <p>Log a few entries to start<br>seeing your patterns.</p>
+      </div>`;
+    return;
+  }
+
+  // Group by day (last 14 days)
+  const dayMap = {};
+  const now = new Date();
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    dayMap[key] = [];
+  }
+
+  entries.forEach(e => {
+    const key = e.timestamp.slice(0, 10);
+    if (dayMap[key]) dayMap[key].push(e);
+  });
+
+  const days = Object.keys(dayMap).sort();
+
+  // Build a chart for each battery
+  let html = '';
+
+  BATTERIES.forEach(battery => {
+    const color = BATTERY_COLORS[battery];
+    const cols = days.map(day => {
+      const dayEntries = dayMap[day].filter(e => e.levels[battery]);
+      let avg = 0;
+      if (dayEntries.length > 0) {
+        avg = dayEntries.reduce((s, e) => s + e.levels[battery], 0) / dayEntries.length;
+      }
+      const hPct = avg > 0 ? (avg / 3 * 100) : 0;
+      const label = new Date(day + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'narrow' });
+      const barColor = avg === 0 ? '#3a3a3a' : color;
+      return `
+        <div class="trend-col">
+          <div class="trend-bar" style="height:${Math.max(hPct, 5)}%;background:${barColor};opacity:${avg === 0 ? 0.3 : 0.85}"></div>
+          <span class="trend-day-label">${label}</span>
+        </div>`;
+    }).join('');
+
+    html += `
+      <div class="trend-section">
+        <div class="trend-title">${battery}</div>
+        <div class="trend-chart">${cols}</div>
+      </div>`;
+  });
+
+  // Overall average this week vs last
+  const thisWeek = entries.filter(e => {
+    const d = new Date(e.timestamp);
+    const ago = (now - d) / 86400000;
+    return ago <= 7;
+  });
+  const lastWeek = entries.filter(e => {
+    const d = new Date(e.timestamp);
+    const ago = (now - d) / 86400000;
+    return ago > 7 && ago <= 14;
+  });
+
+  if (thisWeek.length > 0) {
+    html += `<div class="trend-section"><div class="trend-title">7-Day Averages</div>`;
+    BATTERIES.forEach(b => {
+      const avg = thisWeek.filter(e => e.levels[b]).length > 0
+        ? (thisWeek.filter(e => e.levels[b]).reduce((s, e) => s + e.levels[b], 0) / thisWeek.filter(e => e.levels[b]).length).toFixed(1)
+        : '—';
+      const prevAvg = lastWeek.filter(e => e.levels[b]).length > 0
+        ? (lastWeek.filter(e => e.levels[b]).reduce((s, e) => s + e.levels[b], 0) / lastWeek.filter(e => e.levels[b]).length).toFixed(1)
+        : null;
+      let delta = '';
+      if (prevAvg && avg !== '—') {
+        const diff = (parseFloat(avg) - parseFloat(prevAvg)).toFixed(1);
+        if (diff > 0) delta = ` <span style="color:var(--full)">↑${diff}</span>`;
+        else if (diff < 0) delta = ` <span style="color:var(--low)">↓${Math.abs(diff)}</span>`;
+        else delta = ` <span style="color:var(--text-muted)">→</span>`;
+      }
+      html += `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;">
+        <span style="color:var(--text-dim);text-transform:capitalize">${b}</span>
+        <span>${avg}/3${delta}</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+// ── EXPORT ──
+document.getElementById('export-btn').addEventListener('click', () => {
+  if (entries.length === 0) { showToast('No entries to export'); return; }
+
+  let md = `# Battery Stack Log\n\n`;
+  const grouped = {};
+  entries.forEach(e => {
+    const day = e.timestamp.slice(0, 10);
+    if (!grouped[day]) grouped[day] = [];
+    grouped[day].push(e);
+  });
+
+  Object.keys(grouped).sort().reverse().forEach(day => {
+    const d = new Date(day + 'T12:00:00');
+    md += `## ${d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}\n\n`;
+    grouped[day].sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp)).forEach(e => {
+      const t = new Date(e.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      md += `**${t}**\n`;
+      BATTERIES.forEach(b => {
+        if (e.levels[b]) {
+          const bar = '█'.repeat(e.levels[b]) + '░'.repeat(3 - e.levels[b]);
+          md += `- ${capitalize(b)}: ${bar} ${LEVEL_LABELS[e.levels[b]]}\n`;
+        }
+      });
+      if (e.note) md += `- _${e.note}_\n`;
+      md += `\n`;
+    });
+  });
+
+  navigator.clipboard.writeText(md).then(() => showToast('Markdown copied to clipboard'));
+});
+
+document.getElementById('export-csv-btn').addEventListener('click', () => {
+  if (entries.length === 0) { showToast('No entries to export'); return; }
+
+  let csv = 'timestamp,sensory,social,cognitive,physical,note\n';
+  entries.slice().reverse().forEach(e => {
+    csv += `${e.timestamp},${e.levels.sensory||''},${e.levels.social||''},${e.levels.cognitive||''},${e.levels.physical||''},${e.note ? '"'+e.note.replace(/"/g,'""')+'"' : ''}\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `battery-stack-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV downloaded');
+});
+
+// ── UTILS ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
