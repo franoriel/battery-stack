@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Energy Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --text:       #3d3832;
+      --text-dim:   #7a7267;
+      --text-muted: #6b6159;
+      --border:     rgba(255,255,255,0.38);
+      --glass:      rgba(255,255,255,0.24);
+      --glass-deep: rgba(255,255,255,0.16);
+      --low:        #c2908a;
+      --low-fill:   rgba(194,144,138,0.22);
+      --low-glow:   rgba(194,144,138,0.40);
+      --mid:        #c4aa7d;
+      --mid-fill:   rgba(196,170,125,0.22);
+      --mid-glow:   rgba(196,170,125,0.40);
+      --full:       #8db5a0;
+      --full-fill:  rgba(141,181,160,0.22);
+      --full-glow:  rgba(141,181,160,0.40);
+      --accent:     #9ab3c2;
+      --radius:     14px;
+      /* category identity colors */
+      --c-sensory:   #8aadbe;
+      --c-social:    #7aaa90;
+      --c-cognitive: #c0a060;
+      --c-physical:  #be8880;
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+    body {
+      font-family: 'Manrope', -apple-system, sans-serif;
+      color: var(--text);
+      min-height: 100dvh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ═══════════════════════════════════════
+       ANIMATED BACKGROUND SYSTEM
+       Layer 1: base (always visible, drifts)
+       Layer 2-4: energy overlays (fade in/out)
+    ═══════════════════════════════════════ */
+    .bg-base {
+      position: fixed;
+      inset: -12%;
+      width: 124%; height: 124%;
+      z-index: -2;
+      background: radial-gradient(ellipse 55% 60% at 50% 48%,
+        #e8e2cc 0%, #cfc0a0 28%, #a8a080 52%, #8a9270 72%, #606852 100%);
+      animation: bg-drift 22s ease-in-out infinite;
+      will-change: transform;
+    }
+
+    .bg-overlay {
+      position: fixed;
+      inset: -12%;
+      width: 124%; height: 124%;
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 2.8s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+      will-change: opacity;
+    }
+    .bg-overlay.visible { opacity: 1; }
+
+    #bg-low {
+      background: radial-gradient(ellipse 55% 60% at 48% 45%,
+        #e8d4cc 0%, #c8a090 28%, #a07060 52%, #885050 72%, #5c4040 100%);
+    }
+    #bg-mid {
+      background: radial-gradient(ellipse 55% 60% at 52% 48%,
+        #e8dfc0 0%, #d0c088 28%, #a8a060 52%, #8a8850 72%, #606040 100%);
+    }
+    #bg-full {
+      background: radial-gradient(ellipse 55% 60% at 48% 50%,
+        #d8e8d4 0%, #a0c8a0 28%, #78a880 52%, #587860 72%, #405248 100%);
+    }
+
+    @keyframes bg-drift {
+      0%, 100% { transform: translate(0%,    0%)    scale(1);    }
+      20%       { transform: translate(2.5%,  -2%)   scale(1.025); }
+      45%       { transform: translate(-1.5%, 3%)    scale(0.978); }
+      70%       { transform: translate(-3%,   -1.5%) scale(1.018); }
+      88%       { transform: translate(1%,    2.5%)  scale(0.992); }
+    }
+
+    /* ═══════════════════════════════════════
+       LAYOUT
+    ═══════════════════════════════════════ */
+    .app {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 0 0 40px;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── TABS ── */
+    .tab-bar {
+      display: flex; gap: 4px;
+      padding: 14px 16px 10px;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .tab-btn {
+      flex: 1; padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--glass-deep);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      color: rgba(61,56,50,0.45);
+      font-family: 'Manrope', sans-serif;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+      letter-spacing: 0.3px;
+    }
+    .tab-btn.active {
+      background: rgba(255,255,255,0.40);
+      color: var(--text);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 10px rgba(0,0,0,0.07);
+    }
+
+    /* ── VIEWS ── */
+    .view { display: none; flex: 1; padding: 4px 16px 16px; }
+    .view.active { display: flex; flex-direction: column; }
+
+    /* ═══════════════════════════════════════
+       LOG VIEW
+    ═══════════════════════════════════════ */
+    .log-header {
+      position: relative; text-align: center;
+      padding: 16px 0 22px; overflow: visible;
+    }
+    .glow-orb {
+      position: absolute; left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: 240px; height: 72px; border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(238,232,208,0.75) 0%, transparent 70%);
+      filter: blur(20px);
+      pointer-events: none;
+      animation: orb-pulse 4.5s ease-in-out infinite;
+      z-index: 0;
+    }
+    @keyframes orb-pulse {
+      0%,100% { opacity: 0.38; transform: translate(-50%,-50%) scale(1); }
+      50%      { opacity: 0.85; transform: translate(-50%,-50%) scale(1.22); }
+    }
+    .log-header h1 {
+      font-family: 'Lora', Georgia, serif;
+      font-size: 22px; font-weight: 600;
+      color: #2e2a24;
+      text-shadow: 0 1px 4px rgba(255,255,255,0.5);
+      position: relative; z-index: 1; margin-bottom: 4px;
+    }
+    .log-header .subtitle {
+      font-size: 13px; color: rgba(61,56,50,0.58);
+      text-shadow: 0 1px 2px rgba(255,255,255,0.3);
+      position: relative; z-index: 1;
+    }
+    .timestamp-display {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px; color: rgba(61,56,50,0.4);
+      margin-top: 8px; letter-spacing: 0.3px;
+      position: relative; z-index: 1; display: block;
+    }
+
+    /* Tracker rows */
+    .tracker-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+
+    .tracker-row {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--glass);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.65);
+      transition: border-color 0.5s ease, box-shadow 0.5s ease;
+    }
+    .tracker-row.has-low  { border-color: var(--low);  box-shadow: 0 2px 14px var(--low-glow),  inset 0 1px 0 rgba(255,255,255,0.65); }
+    .tracker-row.has-mid  { border-color: var(--mid);  box-shadow: 0 2px 14px var(--mid-glow),  inset 0 1px 0 rgba(255,255,255,0.65); }
+    .tracker-row.has-full { border-color: var(--full); box-shadow: 0 2px 14px var(--full-glow), inset 0 1px 0 rgba(255,255,255,0.65); }
+
+    .tracker-icon {
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: var(--text-dim);
+    }
+    .tracker-label {
+      flex: 1; font-size: 12px; font-weight: 600;
+      color: var(--text-dim); text-transform: uppercase;
+      letter-spacing: 0.7px; white-space: nowrap;
+    }
+
+    /* Battery */
+    .battery-wrap { display: flex; align-items: center; flex-shrink: 0; }
+    .battery-body {
+      display: flex;
+      border: 1.5px solid rgba(255,255,255,0.40);
+      border-radius: 7px; overflow: hidden;
+      height: 44px; background: rgba(255,255,255,0.18);
+      transition: border-color 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .segment {
+      width: 52px; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: none; outline: none; background: transparent;
+      position: relative;
+      transition: background 0.32s cubic-bezier(0.34, 1.4, 0.64, 1),
+                  box-shadow 0.32s ease;
+      isolation: isolate;
+    }
+    .segment + .segment::before {
+      content: ''; position: absolute; left: 0; top: 20%; bottom: 20%;
+      width: 1px; background: rgba(255,255,255,0.35);
+      transition: opacity 0.3s ease; pointer-events: none;
+    }
+    .segment.active + .segment::before { opacity: 0; }
+
+    .seg-pip {
+      width: 8px; height: 8px; border-radius: 50%;
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  background 0.25s ease, opacity 0.25s ease;
+      opacity: 0.5;
+    }
+    .segment[data-level="1"] .seg-pip { background: var(--low); }
+    .segment[data-level="2"] .seg-pip { background: var(--mid); }
+    .segment[data-level="3"] .seg-pip { background: var(--full); }
+
+    .segment.active[data-level="1"] {
+      background: var(--low-fill); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 0 16px var(--low-glow);
+    }
+    .segment.active[data-level="2"] {
+      background: var(--mid-fill); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 0 16px var(--mid-glow);
+    }
+    .segment.active[data-level="3"] {
+      background: var(--full-fill); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 0 16px var(--full-glow);
+    }
+    .segment.active .seg-pip { transform: scale(1.7); opacity: 1; }
+
+    @keyframes press { 0%{transform:scale(1)} 40%{transform:scale(0.86)} 100%{transform:scale(1)} }
+    .segment.pressing { animation: press 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+    .battery-nub {
+      width: 5px; height: 18px; border-radius: 0 3px 3px 0;
+      background: rgba(255,255,255,0.35); margin-left: -1px; align-self: center;
+      transition: background 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .battery-wrap.sel-low  .battery-body { border-color: var(--low); }
+    .battery-wrap.sel-low  .battery-nub  { background: var(--low); }
+    .battery-wrap.sel-mid  .battery-body { border-color: var(--mid); }
+    .battery-wrap.sel-mid  .battery-nub  { background: var(--mid); }
+    .battery-wrap.sel-full .battery-body { border-color: var(--full); }
+    .battery-wrap.sel-full .battery-nub  { background: var(--full); }
+
+    .save-btn {
+      width: 100%; padding: 15px;
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      background: var(--glass-deep);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      color: rgba(61,56,50,0.38);
+      font-family: 'Manrope', sans-serif; font-size: 15px; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.34, 1.2, 0.64, 1);
+      letter-spacing: 0.2px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+    }
+    .save-btn.ready {
+      background: var(--accent); border-color: transparent; color: #faf8f5;
+      box-shadow: 0 4px 18px rgba(154,179,194,0.4);
+    }
+    .save-btn.saved {
+      background: var(--full); border-color: transparent; color: #faf8f5;
+      box-shadow: 0 4px 18px var(--full-glow);
+    }
+
+    /* ═══════════════════════════════════════
+       HISTORY VIEW
+    ═══════════════════════════════════════ */
+    .history-header { text-align: center; padding: 10px 0 14px; }
+    .history-header h2 {
+      font-family: 'Lora', Georgia, serif;
+      font-size: 18px; font-weight: 600; color: #2e2a24;
+      text-shadow: 0 1px 3px rgba(255,255,255,0.4);
+    }
+
+    .filter-bar { display: flex; gap: 6px; margin-bottom: 10px; }
+    .filter-btn {
+      flex: 1; padding: 8px 6px; min-height: 44px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      background: var(--glass-deep);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      color: rgba(61,56,50,0.42);
+      font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 0.25s ease;
+      text-transform: uppercase; letter-spacing: 0.4px;
+    }
+    .filter-btn.active {
+      background: rgba(255,255,255,0.40); color: var(--text);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+    }
+
+    /* Chart type selector */
+    .chart-selector {
+      display: flex; gap: 6px; margin-bottom: 12px;
+    }
+    .chart-type-btn {
+      flex: 1; padding: 8px; min-height: 44px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      background: var(--glass-deep);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      color: rgba(61,56,50,0.42);
+      cursor: pointer; transition: all 0.25s ease;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      font-family: 'Manrope', sans-serif; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.3px; text-transform: uppercase;
+    }
+    .chart-type-btn.active {
+      background: rgba(255,255,255,0.40); color: var(--text);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+    }
+
+    /* Chart canvas */
+    .chart-wrap {
+      position: relative; width: 100%; margin-bottom: 10px;
+      border-radius: var(--radius); overflow: hidden;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1.5px solid var(--border);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
+    }
+    #chart-canvas { display: block; width: 100%; }
+
+    /* Chart legend */
+    .chart-legend {
+      display: flex; justify-content: center;
+      flex-wrap: wrap; gap: 12px; padding: 8px 12px 10px;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 10px; font-weight: 600;
+      color: rgba(61,56,50,0.55);
+      text-transform: uppercase; letter-spacing: 0.4px;
+    }
+    .legend-swatch {
+      width: 16px; height: 3px; border-radius: 2px;
+    }
+
+    /* Summary */
+    .history-summary {
+      font-family: 'DM Mono', monospace; font-size: 10px;
+      color: rgba(61,56,50,0.38); text-align: center;
+      margin-bottom: 10px; letter-spacing: 0.2px;
+    }
+
+    /* Log list */
+    .log-list {
+      display: flex; flex-direction: column; gap: 7px;
+      margin-bottom: 12px; max-height: 220px; overflow-y: auto; padding-right: 2px;
+    }
+    .log-list::-webkit-scrollbar { width: 3px; }
+    .log-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.28); border-radius: 2px; }
+
+    .log-entry {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--glass);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1.5px solid var(--border); border-radius: 11px;
+      padding: 9px 11px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+    }
+    .log-entry-time {
+      font-family: 'DM Mono', monospace; font-size: 10px;
+      color: rgba(61,56,50,0.42); white-space: nowrap; letter-spacing: 0.2px;
+      min-width: 80px;
+    }
+    /* Category icon-level indicators */
+    .entry-cats { display: flex; gap: 6px; flex: 1; }
+    .entry-cat {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+    }
+    .entry-cat-icon { opacity: 0.65; }
+    .entry-cat-dots { display: flex; gap: 2px; }
+    .entry-cat-dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+    }
+    .entry-cat-dot.filled.lvl-1 { background: var(--low); }
+    .entry-cat-dot.filled.lvl-2 { background: var(--mid); }
+    .entry-cat-dot.filled.lvl-3 { background: var(--full); }
+
+    .log-entry-delete {
+      background: none; border: none; color: rgba(61,56,50,0.22);
+      font-size: 14px; cursor: pointer;
+      padding: 0; min-width: 44px; min-height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      line-height: 1; transition: color 0.2s; flex-shrink: 0;
+    }
+    .log-entry-delete:hover { color: var(--low); }
+
+    .empty-history {
+      text-align: center; padding: 28px 0;
+      color: rgba(61,56,50,0.32); font-size: 13px; line-height: 1.7;
+    }
+
+    /* Export */
+    .export-btn {
+      width: 100%; padding: 13px;
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      background: var(--glass-deep);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      color: rgba(61,56,50,0.5);
+      font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all 0.25s ease;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .export-btn:hover { background: rgba(255,255,255,0.32); color: var(--text); }
+
+    /* ═══════════════════════════════════════
+       ACCESSIBILITY — FOCUS STATES
+    ═══════════════════════════════════════ */
+    .tab-btn:focus-visible,
+    .segment:focus-visible,
+    .filter-btn:focus-visible,
+    .chart-type-btn:focus-visible,
+    .save-btn:focus-visible,
+    .export-btn:focus-visible,
+    .log-entry-delete:focus-visible {
+      outline: 2px solid rgba(61, 56, 50, 0.6);
+      outline-offset: 2px;
+    }
+    .tab-btn:focus-visible,
+    .filter-btn:focus-visible,
+    .chart-type-btn:focus-visible,
+    .save-btn:focus-visible,
+    .export-btn:focus-visible {
+      border-radius: 10px;
+    }
+    .log-entry-delete:focus-visible {
+      border-radius: 6px;
+    }
+    .segment:focus-visible {
+      outline-offset: -2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .bg-base { animation: none; }
+      .glow-orb { animation: none; }
+      .bg-overlay { transition: none; }
+      .segment, .seg-pip, .tracker-row, .save-btn,
+      .battery-body, .battery-nub { transition: none; }
+      .segment.pressing { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── BACKGROUND LAYERS ── -->
+<div class="bg-base"></div>
+<div class="bg-overlay" id="bg-low"></div>
+<div class="bg-overlay" id="bg-mid"></div>
+<div class="bg-overlay" id="bg-full"></div>
+
+<div class="app">
+
+  <nav class="tab-bar" role="tablist" aria-label="App sections">
+    <button class="tab-btn active" data-tab="log" role="tab" aria-selected="true" aria-controls="view-log">Log</button>
+    <button class="tab-btn" data-tab="history" role="tab" aria-selected="false" aria-controls="view-history">History</button>
+  </nav>
+
+  <!-- ── LOG VIEW ── -->
+  <section id="view-log" class="view active" role="tabpanel" aria-labelledby="tab-log">
+    <header class="log-header">
+      <div class="glow-orb" aria-hidden="true"></div>
+      <h1>Energy Check-in</h1>
+      <p class="subtitle">How are you doing right now?</p>
+      <time class="timestamp-display" id="timestamp-display"></time>
+    </header>
+    <div class="tracker-list" id="tracker-list" role="group" aria-label="Energy categories"></div>
+    <button class="save-btn" id="save-btn" disabled aria-live="polite">Log energy</button>
+  </section>
+
+  <!-- ── HISTORY VIEW ── -->
+  <section id="view-history" class="view" role="tabpanel" aria-labelledby="tab-history">
+    <div class="history-header"><h2>Energy History</h2></div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" data-range="day">Day</button>
+      <button class="filter-btn" data-range="week">Week</button>
+      <button class="filter-btn" data-range="month">Month</button>
+      <button class="filter-btn" data-range="all">All</button>
+    </div>
+
+    <div class="chart-selector">
+      <button class="chart-type-btn active" data-chart="area">
+        <svg viewBox="0 0 18 12" width="18" height="12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 10 C3 10 4 3 6 3 S9 8 11 6 S14 2 17 4"/>
+        </svg>
+        Area
+      </button>
+      <button class="chart-type-btn" data-chart="bar">
+        <svg viewBox="0 0 18 12" width="18" height="12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="4"  width="3" height="8" rx="1"/>
+          <rect x="6" y="1"  width="3" height="11" rx="1"/>
+          <rect x="11" y="6" width="3" height="6" rx="1"/>
+          <rect x="15" y="3" width="2" height="9" rx="1"/>
+        </svg>
+        Bar
+      </button>
+      <button class="chart-type-btn" data-chart="radar">
+        <svg viewBox="0 0 18 18" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="9,1 17,9 9,17 1,9"/>
+          <polygon points="9,4 14,9 9,14 4,9" opacity="0.5"/>
+        </svg>
+        Radar
+      </button>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="chart-canvas" role="img" aria-label="Energy history chart"></canvas>
+      <div class="chart-legend" id="chart-legend" aria-hidden="true"></div>
+    </div>
+
+    <p class="history-summary" id="history-summary" aria-live="polite"></p>
+    <div class="log-list" id="log-list"></div>
+
+    <button class="export-btn" id="export-btn">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 11v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-2M8 2v8M5 7l3 3 3-3"/>
+      </svg>
+      Export CSV
+    </button>
+  </section>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════
+const CATEGORIES = [
+  { id: 'sensory',   label: 'Sensory'   },
+  { id: 'social',    label: 'Social'    },
+  { id: 'cognitive', label: 'Cognitive' },
+  { id: 'physical',  label: 'Physical'  },
+];
+
+// Category identity: shape SVG paths + colors
+const CAT = {
+  sensory:   { color: '#8aadbe', path: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z<circle cx=12 cy=12 r=3.2/><circle cx=12 cy=12 r=1.1 fill=currentColor stroke=none/>' },
+  social:    { color: '#7aaa90', path: '' },
+  cognitive: { color: '#c0a060', path: '' },
+  physical:  { color: '#be8880', path: '' },
+};
+
+const ICON_PATHS = {
+  sensory:   ['M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z', 'circle:12,12,3.2', 'dot:12,12,1.1'],
+  social:    null,
+  cognitive: null,
+  physical:  null,
+};
+
+// Full SVG strings (reused across log view + legend + chart labels)
+function makeSVG(id, size) {
+  const svgs = {
+    sensory: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" width="${size}" height="${size}"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/></svg>`,
+    social:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" width="${size}" height="${size}"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+    cognitive:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" width="${size}" height="${size}"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-1.07-4.61A3 3 0 0 1 4.5 9.14a2.5 2.5 0 0 1 .36-4.67A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 1.07-4.61A3 3 0 0 0 19.5 9.14a2.5 2.5 0 0 0-.36-4.67A2.5 2.5 0 0 0 14.5 2Z"/></svg>`,
+    physical: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" width="${size}" height="${size}"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,
+  };
+  return svgs[id];
+}
+
+const CAT_COLORS  = { sensory:'#8aadbe', social:'#7aaa90', cognitive:'#c0a060', physical:'#be8880' };
+const LEVEL_COLOR = { 0:'transparent', 1:'#c2908a', 2:'#c4aa7d', 3:'#8db5a0' };
+const SEL_CLASS   = { 1:'sel-low', 2:'sel-mid', 3:'sel-full' };
+const ROW_CLASS   = { 1:'has-low',  2:'has-mid',  3:'has-full'  };
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+const current = { sensory:null, social:null, cognitive:null, physical:null };
+
+let logs = [];
+try { logs = JSON.parse(localStorage.getItem('battery-logs') || '[]'); } catch(e) {}
+function saveLogs() { try { localStorage.setItem('battery-logs', JSON.stringify(logs)); } catch(e) {} }
+
+// ═══════════════════════════════════════════════
+// TIMESTAMP
+// ═══════════════════════════════════════════════
+function formatNow() {
+  const d = new Date();
+  return d.toLocaleDateString('en-US',{ weekday:'long', month:'short', day:'numeric' })
+       + ' · '
+       + d.toLocaleTimeString('en-US',{ hour:'numeric', minute:'2-digit' });
+}
+function tickTimestamp() {
+  const el = document.getElementById('timestamp-display');
+  if (el) el.textContent = formatNow();
+}
+tickTimestamp();
+setInterval(tickTimestamp, 30_000);
+
+// ═══════════════════════════════════════════════
+// BACKGROUND REACTIVITY (smooth cross-fade)
+// ═══════════════════════════════════════════════
+const bgOverlays = {
+  low:  document.getElementById('bg-low'),
+  mid:  document.getElementById('bg-mid'),
+  full: document.getElementById('bg-full'),
+};
+
+function updateBackground() {
+  const vals = Object.values(current).filter(v => v !== null);
+  bgOverlays.low.classList.remove('visible');
+  bgOverlays.mid.classList.remove('visible');
+  bgOverlays.full.classList.remove('visible');
+  if (!vals.length) return;
+  const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+  if      (avg >= 2.5)  bgOverlays.full.classList.add('visible');
+  else if (avg >= 1.75) bgOverlays.mid.classList.add('visible');
+  else                  bgOverlays.low.classList.add('visible');
+}
+
+// ═══════════════════════════════════════════════
+// BUILD LOG VIEW
+// ═══════════════════════════════════════════════
+function buildTrackerRow(cat) {
+  const row = document.createElement('div');
+  row.className = 'tracker-row';
+  row.dataset.cat = cat.id;
+
+  const icon = document.createElement('div');
+  icon.className = 'tracker-icon';
+  icon.innerHTML = makeSVG(cat.id, 26);
+
+  const label = document.createElement('div');
+  label.className = 'tracker-label';
+  label.textContent = cat.label;
+
+  const bWrap = document.createElement('div');
+  bWrap.className = 'battery-wrap';
+  bWrap.dataset.cat = cat.id;
+
+  const body = document.createElement('div');
+  body.className = 'battery-body';
+
+  [1,2,3].forEach(level => {
+    const seg = document.createElement('button');
+    seg.className = 'segment';
+    seg.type = 'button';
+    seg.dataset.level = level;
+    seg.dataset.cat = cat.id;
+    seg.setAttribute('aria-label', `${cat.label} — ${['','Low','Mid','Full'][level]}`);
+    seg.setAttribute('aria-pressed', 'false');
+    const pip = document.createElement('span');
+    pip.className = 'seg-pip';
+    seg.appendChild(pip);
+    seg.addEventListener('click', () => onSelect(cat.id, level));
+    body.appendChild(seg);
+  });
+
+  const nub = document.createElement('div');
+  nub.className = 'battery-nub';
+  bWrap.appendChild(body);
+  bWrap.appendChild(nub);
+  row.appendChild(icon);
+  row.appendChild(label);
+  row.appendChild(bWrap);
+  return row;
+}
+
+function onSelect(catId, level) {
+  const seg = document.querySelector(`.segment[data-cat="${catId}"][data-level="${level}"]`);
+  seg.classList.remove('pressing');
+  void seg.offsetWidth;
+  seg.classList.add('pressing');
+  seg.addEventListener('animationend', () => seg.classList.remove('pressing'), { once: true });
+  current[catId] = current[catId] === level ? null : level;
+  refreshRow(catId);
+  updateSaveBtn();
+  updateBackground();
+}
+
+function refreshRow(catId) {
+  const level = current[catId];
+  const row   = document.querySelector(`.tracker-row[data-cat="${catId}"]`);
+  const bWrap = document.querySelector(`.battery-wrap[data-cat="${catId}"]`);
+  document.querySelectorAll(`.segment[data-cat="${catId}"]`).forEach(s => {
+    const active = parseInt(s.dataset.level) === level;
+    s.classList.toggle('active', active);
+    s.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  bWrap.className = 'battery-wrap' + (level ? ` ${SEL_CLASS[level]}` : '');
+  row.className   = 'tracker-row'  + (level ? ` ${ROW_CLASS[level]}` : '');
+}
+
+function updateSaveBtn() {
+  const btn = document.getElementById('save-btn');
+  const any = CATEGORIES.some(c => current[c.id] !== null);
+  const all = CATEGORIES.every(c => current[c.id] !== null);
+  btn.disabled = !any;
+  btn.className = any ? 'save-btn ready' : 'save-btn';
+  btn.textContent = all ? 'Log energy' : any ? 'Log partial check-in' : 'Log energy';
+}
+
+const trackerList = document.getElementById('tracker-list');
+CATEGORIES.forEach(cat => trackerList.appendChild(buildTrackerRow(cat)));
+
+document.getElementById('save-btn').addEventListener('click', () => {
+  const entry = { timestamp: new Date().toISOString(), ...Object.fromEntries(CATEGORIES.map(c => [c.id, current[c.id]])) };
+  logs.unshift(entry);
+  saveLogs();
+  const btn = document.getElementById('save-btn');
+  btn.className = 'save-btn saved';
+  btn.textContent = 'Logged ✓';
+  btn.disabled = true;
+  CATEGORIES.forEach(c => { current[c.id] = null; refreshRow(c.id); });
+  updateBackground();
+  setTimeout(() => { btn.className = 'save-btn'; btn.textContent = 'Log energy'; }, 2000);
+  renderHistory(activeRange);
+});
+
+// ═══════════════════════════════════════════════
+// HISTORY VIEW
+// ═══════════════════════════════════════════════
+let activeRange = 'day';
+let activeChart = 'area';
+
+function filterLogs(range) {
+  const cutoffs = { day: 86400000, week: 7*86400000, month: 30*86400000, all: null };
+  const ms = cutoffs[range];
+  if (!ms) return [...logs];
+  const cutoff = Date.now() - ms;
+  return logs.filter(e => new Date(e.timestamp).getTime() >= cutoff);
+}
+
+function renderHistory(range) {
+  activeRange = range;
+  const entries = filterLogs(range);
+  renderLogList(entries);
+  drawChart(entries, activeChart);
+  renderSummary(entries);
+}
+
+// ─── Log list (shape icons + dot indicators) ───
+function renderLogList(entries) {
+  const list = document.getElementById('log-list');
+  list.innerHTML = '';
+  if (!entries.length) {
+    list.innerHTML = '<p class="empty-history">No entries for this period.<br>Log your first check-in.</p>';
+    return;
+  }
+  entries.forEach(entry => {
+    const el = document.createElement('div');
+    el.className = 'log-entry';
+
+    const d = new Date(entry.timestamp);
+    const timeEl = document.createElement('div');
+    timeEl.className = 'log-entry-time';
+    timeEl.textContent = d.toLocaleDateString('en-US',{month:'short',day:'numeric'})
+      + ' · ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+
+    const cats = document.createElement('div');
+    cats.className = 'entry-cats';
+
+    CATEGORIES.forEach(cat => {
+      const lvl = entry[cat.id] || 0;
+      const catEl = document.createElement('div');
+      catEl.className = 'entry-cat';
+
+      const iconEl = document.createElement('div');
+      iconEl.className = 'entry-cat-icon';
+      iconEl.style.color = CAT_COLORS[cat.id];
+      iconEl.innerHTML = makeSVG(cat.id, 14);
+
+      const dotsEl = document.createElement('div');
+      dotsEl.className = 'entry-cat-dots';
+      for (let i = 1; i <= 3; i++) {
+        const dot = document.createElement('span');
+        dot.className = 'entry-cat-dot' + (i <= lvl ? ` filled lvl-${lvl}` : '');
+        dotsEl.appendChild(dot);
+      }
+
+      catEl.appendChild(iconEl);
+      catEl.appendChild(dotsEl);
+      cats.appendChild(catEl);
+    });
+
+    const del = document.createElement('button');
+    del.className = 'log-entry-delete';
+    del.type = 'button';
+    del.setAttribute('aria-label', 'Delete entry');
+    del.innerHTML = '&times;';
+    del.addEventListener('click', () => {
+      const gi = logs.indexOf(entry);
+      if (gi !== -1) { logs.splice(gi, 1); saveLogs(); }
+      renderHistory(activeRange);
+    });
+
+    el.appendChild(timeEl);
+    el.appendChild(cats);
+    el.appendChild(del);
+    list.appendChild(el);
+  });
+}
+
+function renderSummary(entries) {
+  const el = document.getElementById('history-summary');
+  if (!entries.length) { el.textContent = ''; return; }
+  const totals = {1:0, 2:0, 3:0}; let count = 0;
+  entries.forEach(e => CATEGORIES.forEach(c => { if (e[c.id]) { totals[e[c.id]]++; count++; } }));
+  const pct = v => Math.round((v/count)*100)||0;
+  const summary = `${entries.length} entries  ·  Full ${pct(totals[3])}%  ·  Mid ${pct(totals[2])}%  ·  Low ${pct(totals[1])}%`;
+  el.textContent = summary;
+  document.getElementById('chart-canvas').setAttribute('aria-label',
+    `Energy history ${activeChart} chart: ${summary}`);
+}
+
+// ═══════════════════════════════════════════════
+// CHART RENDERING
+// ═══════════════════════════════════════════════
+const canvas = document.getElementById('chart-canvas');
+
+function resizeCanvas() {
+  const pw = canvas.parentElement.clientWidth;
+  const h  = activeChart === 'radar' ? pw * 0.8 : pw * 0.55;
+  canvas.width  = pw * devicePixelRatio;
+  canvas.height = h  * devicePixelRatio;
+  canvas.style.height = h + 'px';
+  drawChart(filterLogs(activeRange), activeChart);
+}
+
+function drawChart(entries, type) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  if      (type === 'area')  drawAreaChart(ctx, entries, W, H);
+  else if (type === 'bar')   drawBarChart(ctx, entries, W, H);
+  else if (type === 'radar') drawRadarChart(ctx, entries, W, H);
+  renderLegend(type);
+}
+
+// ─── AREA / LINE CHART ───────────────────────
+function drawAreaChart(ctx, entries, W, H) {
+  const ml=32, mr=16, mt=18, mb=28;
+  const w = W-ml-mr, h = H-mt-mb;
+
+  // Y guide lines at Low/Mid/Full
+  const yLabels = [{v:1,l:'Low'},{v:2,l:'Mid'},{v:3,l:'Full'}];
+  yLabels.forEach(({v,l}) => {
+    const y = mt + h - ((v-1)/2)*h;
+    ctx.beginPath();
+    ctx.moveTo(ml, y); ctx.lineTo(ml+w, y);
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 0.7; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = `${10*devicePixelRatio}px Manrope,sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.fillText(l, ml-5, y+3.5*devicePixelRatio);
+  });
+
+  if (!entries.length) { drawPlaceholderText(ctx, W, H); return; }
+
+  const n = entries.length;
+  const xOf = i => ml + (n === 1 ? w/2 : (i/(n-1))*w);
+  const yOf = v => mt + h - ((Math.max(1,v||1)-1)/2)*h;
+
+  CATEGORIES.forEach(cat => {
+    const pts = entries.map((e,i) => ({ x: xOf(i), y: yOf(e[cat.id] || 0) }));
+    const c   = CAT_COLORS[cat.id];
+    const hasData = entries.some(e => e[cat.id]);
+    if (!hasData) return;
+
+    // Gradient fill
+    const grad = ctx.createLinearGradient(0, mt, 0, mt+h);
+    grad.addColorStop(0, hexA(c, 0.28));
+    grad.addColorStop(1, hexA(c, 0.02));
+
+    // Area fill
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, mt+h);
+    ctx.lineTo(pts[0].x, pts[0].y);
+    if (n > 1) {
+      for (let i=1; i<pts.length; i++) {
+        const cpx = (pts[i-1].x + pts[i].x) / 2;
+        ctx.bezierCurveTo(cpx, pts[i-1].y, cpx, pts[i].y, pts[i].x, pts[i].y);
+      }
+    }
+    ctx.lineTo(pts[pts.length-1].x, mt+h);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Line
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    if (n > 1) {
+      for (let i=1; i<pts.length; i++) {
+        const cpx = (pts[i-1].x + pts[i].x) / 2;
+        ctx.bezierCurveTo(cpx, pts[i-1].y, cpx, pts[i].y, pts[i].x, pts[i].y);
+      }
+    }
+    ctx.strokeStyle = c;
+    ctx.lineWidth = 1.8 * devicePixelRatio;
+    ctx.lineJoin = 'round'; ctx.stroke();
+
+    // Data point circles
+    pts.forEach(p => {
+      if (p.y === yOf(0)) return;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3 * devicePixelRatio, 0, Math.PI*2);
+      ctx.fillStyle = c;
+      ctx.fill();
+    });
+  });
+
+  // X-axis date labels (first and last)
+  if (n >= 2) {
+    ctx.fillStyle = 'rgba(255,255,255,0.32)';
+    ctx.font = `${9.5*devicePixelRatio}px DM Mono,monospace`;
+    const fmt = d => new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    ctx.textAlign = 'left';  ctx.fillText(fmt(entries[0].timestamp),   ml, mt+h+mb*0.7);
+    ctx.textAlign = 'right'; ctx.fillText(fmt(entries[n-1].timestamp), ml+w, mt+h+mb*0.7);
+  }
+}
+
+// ─── BAR CHART ───────────────────────────────
+function drawBarChart(ctx, entries, W, H) {
+  const ml=10, mr=10, mt=18, mb=28;
+  const w = W-ml-mr, h = H-mt-mb;
+
+  // Y guides
+  [1,2,3].forEach(v => {
+    const y = mt + h - ((v-1)/2)*h;
+    ctx.beginPath(); ctx.moveTo(ml,y); ctx.lineTo(ml+w,y);
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth=0.7; ctx.stroke();
+  });
+
+  if (!entries.length) { drawPlaceholderText(ctx, W, H); return; }
+
+  const n = entries.length;
+  const groupW = w / n;
+  const barW   = Math.min((groupW - 8) / 4, 18) * devicePixelRatio;
+  const gap    = 1.5 * devicePixelRatio;
+
+  entries.forEach((entry, i) => {
+    const gx = ml + i * groupW + groupW/2 - (4*barW + 3*gap)/2;
+    CATEGORIES.forEach((cat, j) => {
+      const lvl = entry[cat.id] || 0;
+      if (!lvl) return;
+      const barH = ((lvl-1)/2)*h*0.85 + h*0.1;
+      const x = gx + j*(barW+gap);
+      const y = mt + h - barH;
+      const c = CAT_COLORS[cat.id];
+
+      // Bar gradient
+      const g = ctx.createLinearGradient(0, y, 0, mt+h);
+      g.addColorStop(0, hexA(c, 0.85));
+      g.addColorStop(1, hexA(c, 0.35));
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      const r = Math.min(barW/2, 4*devicePixelRatio);
+      ctx.roundRect(x, y, barW, barH, [r, r, 0, 0]);
+      ctx.fill();
+
+      // Level color dot on top
+      ctx.beginPath();
+      ctx.arc(x + barW/2, y - 4*devicePixelRatio, 2.5*devicePixelRatio, 0, Math.PI*2);
+      ctx.fillStyle = LEVEL_COLOR[lvl];
+      ctx.fill();
+    });
+  });
+}
+
+// ─── RADAR CHART ─────────────────────────────
+function drawRadarChart(ctx, entries, W, H) {
+  const cx = W/2, cy = H/2;
+  const R  = Math.min(W,H) * 0.36;
+
+  // Reference rings
+  [0.33, 0.66, 1].forEach(f => {
+    ctx.beginPath(); ctx.arc(cx,cy,R*f,0,Math.PI*2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth=0.8; ctx.stroke();
+  });
+
+  // Axes
+  CATEGORIES.forEach((_,j) => {
+    const a = (j/4)*Math.PI*2 - Math.PI/2;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+Math.cos(a)*R, cy+Math.sin(a)*R);
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth=0.6; ctx.stroke();
+  });
+
+  if (!entries.length) { drawPlaceholderText(ctx, W, H); return; }
+
+  // Draw each entry as a polygon (recent = brighter)
+  const n = entries.length;
+  entries.slice().reverse().forEach((entry, ri) => {
+    const i = n - 1 - ri;
+    const alpha = 0.06 + (i/n)*0.2;
+    const pts = CATEGORIES.map((cat,j) => {
+      const lvl = entry[cat.id] || 0;
+      const a   = (j/4)*Math.PI*2 - Math.PI/2;
+      const r   = lvl > 0 ? ((lvl-1)/2 * 0.7 + 0.15) * R : 0.05*R;
+      return { x: cx+Math.cos(a)*r, y: cy+Math.sin(a)*r };
+    });
+
+    // Avg color for this entry
+    const levels = CATEGORIES.map(c => entry[c.id]||0).filter(v=>v>0);
+    const avg    = levels.length ? levels.reduce((a,b)=>a+b,0)/levels.length : 1.5;
+    const hue    = avg >= 2.5 ? '#8db5a0' : avg >= 1.75 ? '#c4aa7d' : '#c2908a';
+
+    ctx.beginPath();
+    pts.forEach((p,j) => j===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
+    ctx.closePath();
+    ctx.fillStyle   = hexA(hue, alpha*0.5);
+    ctx.strokeStyle = hexA(hue, alpha*2.5);
+    ctx.lineWidth   = 1.2 * devicePixelRatio;
+    ctx.globalAlpha = 1;
+    ctx.fill(); ctx.stroke();
+  });
+
+  // Axis labels (category icons drawn via image cache)
+  CATEGORIES.forEach((cat,j) => {
+    const a  = (j/4)*Math.PI*2 - Math.PI/2;
+    const r  = R + 22*devicePixelRatio;
+    const x  = cx + Math.cos(a)*r;
+    const y  = cy + Math.sin(a)*r;
+    const sz = 20*devicePixelRatio;
+    drawIconOnCanvas(ctx, cat.id, x - sz/2, y - sz/2, sz, CAT_COLORS[cat.id]);
+  });
+}
+
+// ─── LEGEND ─────────────────────────────────
+function renderLegend(type) {
+  const el = document.getElementById('chart-legend');
+  el.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    const swatch = document.createElement('span');
+    swatch.className = 'legend-swatch';
+    swatch.style.background = CAT_COLORS[cat.id];
+    const icon = document.createElement('span');
+    icon.style.color = CAT_COLORS[cat.id];
+    icon.style.opacity = '0.8';
+    icon.innerHTML = makeSVG(cat.id, 13);
+    const lbl = document.createElement('span');
+    lbl.textContent = cat.label;
+    item.appendChild(swatch);
+    item.appendChild(icon);
+    item.appendChild(lbl);
+    el.appendChild(item);
+  });
+}
+
+// ─── PLACEHOLDER ─────────────────────────────
+function drawPlaceholderText(ctx, W, H) {
+  ctx.fillStyle = 'rgba(255,255,255,0.22)';
+  ctx.font = `${11*devicePixelRatio}px Manrope,sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('Log check-ins to see your chart', W/2, H/2 - 6*devicePixelRatio);
+  ctx.font = `${10*devicePixelRatio}px Manrope,sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.14)';
+  ctx.fillText('No data for this period', W/2, H/2 + 12*devicePixelRatio);
+}
+
+// ─── ICON ON CANVAS (SVG → Image cache) ──────
+const _iconCache = {};
+function drawIconOnCanvas(ctx, catId, x, y, size, color) {
+  const key = `${catId}-${size}-${color}`;
+  if (_iconCache[key]) {
+    ctx.drawImage(_iconCache[key], x, y, size, size);
+    return;
+  }
+  const svg = makeSVG(catId, size).replace('stroke="currentColor"', `stroke="${color}"`);
+  const blob = new Blob([svg], {type:'image/svg+xml'});
+  const url  = URL.createObjectURL(blob);
+  const img  = new Image(size, size);
+  img.onload = () => {
+    _iconCache[key] = img;
+    ctx.drawImage(img, x, y, size, size);
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
+}
+
+// ─── HELPERS ─────────────────────────────────
+function hexA(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
+    });
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+    document.getElementById(`view-${btn.dataset.tab}`).classList.add('active');
+    if (btn.dataset.tab === 'history') { resizeCanvas(); renderHistory(activeRange); }
+  });
+});
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderHistory(btn.dataset.range);
+  });
+});
+
+document.querySelectorAll('.chart-type-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.chart-type-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeChart = btn.dataset.chart;
+    resizeCanvas();
+  });
+});
+
+// ═══════════════════════════════════════════════
+// CSV EXPORT
+// ═══════════════════════════════════════════════
+document.getElementById('export-btn').addEventListener('click', () => {
+  const entries = filterLogs(activeRange);
+  if (!entries.length) return;
+  const lbl = l => ['—','Low','Mid','Full'][l||0];
+  const hdr = ['Timestamp','Date','Time','Sensory','Social','Cognitive','Physical'];
+  const rows = entries.map(e => {
+    const d = new Date(e.timestamp);
+    return [e.timestamp,
+      d.toLocaleDateString('en-US'), d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}),
+      lbl(e.sensory), lbl(e.social), lbl(e.cognitive), lbl(e.physical)
+    ].map(v=>`"${v}"`).join(',');
+  });
+  const csv  = [hdr.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), {href:url, download:`battery-stack-${activeRange}-${new Date().toISOString().slice(0,10)}.csv`});
+  a.click(); URL.revokeObjectURL(url);
+});
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+const ro = new ResizeObserver(resizeCanvas);
+ro.observe(canvas.parentElement);
+resizeCanvas();
+</script>
+</body>
+</html>

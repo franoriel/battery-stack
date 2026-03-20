@@ -4,8 +4,8 @@
   "description": "AuDHD Energy Battery Tracker",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#1a1a1a",
-  "theme_color": "#1a1a1a",
+  "background_color": "#f0ece6",
+  "theme_color": "#f0ece6",
   "orientation": "portrait",
   "icons": [
     {
