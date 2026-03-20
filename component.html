@@ -6,31 +6,31 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Energy Tracker</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Manrope:wght@400;500;600;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --text:       #3d3832;
-      --text-dim:   #7a7267;
-      --text-muted: #6b6159;
-      --border:     rgba(255,255,255,0.38);
-      --glass:      rgba(255,255,255,0.24);
-      --glass-deep: rgba(255,255,255,0.16);
-      --low:        #c2908a;
-      --low-fill:   rgba(194,144,138,0.22);
-      --low-glow:   rgba(194,144,138,0.40);
-      --mid:        #c4aa7d;
-      --mid-fill:   rgba(196,170,125,0.22);
-      --mid-glow:   rgba(196,170,125,0.40);
-      --full:       #8db5a0;
-      --full-fill:  rgba(141,181,160,0.22);
-      --full-glow:  rgba(141,181,160,0.40);
-      --accent:     #9ab3c2;
-      --radius:     14px;
+      --text:       #f0ece6;
+      --text-dim:   #a09488;
+      --text-muted: #6a6260;
+      --border:     rgba(255,255,255,0.10);
+      --glass:      rgba(255,255,255,0.06);
+      --glass-deep: rgba(255,255,255,0.03);
+      --low:        #9a6e6c;
+      --low-fill:   rgba(154,110,108,0.12);
+      --low-glow:   rgba(154,110,108,0.32);
+      --mid:        #9a8a5c;
+      --mid-fill:   rgba(154,138,92,0.12);
+      --mid-glow:   rgba(154,138,92,0.32);
+      --full:       #5a9272;
+      --full-fill:  rgba(90,146,114,0.12);
+      --full-glow:  rgba(90,146,114,0.32);
+      --accent:     #6a8898;
+      --radius:     0px;
       /* category identity colors */
-      --c-sensory:   #8aadbe;
-      --c-social:    #7aaa90;
-      --c-cognitive: #c0a060;
-      --c-physical:  #be8880;
+      --c-sensory:   #6898a8;
+      --c-social:    #5a9272;
+      --c-cognitive: #9a8a5c;
+      --c-physical:  #9a6e6c;
     }
 
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -45,52 +45,13 @@
     }
 
     /* ═══════════════════════════════════════
-       ANIMATED BACKGROUND SYSTEM
-       Layer 1: base (always visible, drifts)
-       Layer 2-4: energy overlays (fade in/out)
+       BACKGROUND — solid black
     ═══════════════════════════════════════ */
     .bg-base {
-      position: fixed;
-      inset: -12%;
-      width: 124%; height: 124%;
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
       z-index: -2;
-      background: radial-gradient(ellipse 55% 60% at 50% 48%,
-        #e8e2cc 0%, #cfc0a0 28%, #a8a080 52%, #8a9270 72%, #606852 100%);
-      animation: bg-drift 22s ease-in-out infinite;
-      will-change: transform;
-    }
-
-    .bg-overlay {
-      position: fixed;
-      inset: -12%;
-      width: 124%; height: 124%;
-      z-index: -1;
-      opacity: 0;
-      transition: opacity 2.8s cubic-bezier(0.4, 0, 0.2, 1);
-      pointer-events: none;
-      will-change: opacity;
-    }
-    .bg-overlay.visible { opacity: 1; }
-
-    #bg-low {
-      background: radial-gradient(ellipse 55% 60% at 48% 45%,
-        #e8d4cc 0%, #c8a090 28%, #a07060 52%, #885050 72%, #5c4040 100%);
-    }
-    #bg-mid {
-      background: radial-gradient(ellipse 55% 60% at 52% 48%,
-        #e8dfc0 0%, #d0c088 28%, #a8a060 52%, #8a8850 72%, #606040 100%);
-    }
-    #bg-full {
-      background: radial-gradient(ellipse 55% 60% at 48% 50%,
-        #d8e8d4 0%, #a0c8a0 28%, #78a880 52%, #587860 72%, #405248 100%);
-    }
-
-    @keyframes bg-drift {
-      0%, 100% { transform: translate(0%,    0%)    scale(1);    }
-      20%       { transform: translate(2.5%,  -2%)   scale(1.025); }
-      45%       { transform: translate(-1.5%, 3%)    scale(0.978); }
-      70%       { transform: translate(-3%,   -1.5%) scale(1.018); }
-      88%       { transform: translate(1%,    2.5%)  scale(0.992); }
+      background: #000;
     }
 
     /* ═══════════════════════════════════════
@@ -114,10 +75,10 @@
     .tab-btn {
       flex: 1; padding: 9px 12px;
       border: 1.5px solid var(--border);
-      border-radius: 10px;
+      border-radius: 0;
       background: var(--glass-deep);
       backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      color: rgba(61,56,50,0.45);
+      color: rgba(240,236,230,0.35);
       font-family: 'Manrope', sans-serif;
       font-size: 13px; font-weight: 600;
       cursor: pointer;
@@ -125,9 +86,9 @@
       letter-spacing: 0.3px;
     }
     .tab-btn.active {
-      background: rgba(255,255,255,0.40);
+      background: rgba(255,255,255,0.10);
       color: var(--text);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 10px rgba(0,0,0,0.07);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 2px 10px rgba(0,0,0,0.4);
     }
 
     /* ── VIEWS ── */
@@ -135,43 +96,94 @@
     .view.active { display: flex; flex-direction: column; }
 
     /* ═══════════════════════════════════════
+       HERO VIDEO
+    ═══════════════════════════════════════ */
+    .hero {
+      width: 100%; position: relative; overflow: hidden;
+      flex-shrink: 0; border-radius: 0;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    }
+    .hero video {
+      width: 100%; height: 52vw; max-height: 280px; min-height: 180px;
+      object-fit: cover; display: block;
+    }
+    /* fade to black at bottom */
+    .hero::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+      height: 80px;
+      background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.72));
+      pointer-events: none;
+    }
+
+    /* ── EDITORIAL DATE OVERLAY ── */
+    .hero-date {
+      position: absolute; bottom: 0; left: 0;
+      padding: 0 0 10px 14px;
+      pointer-events: none; z-index: 3;
+      color: #fff;
+      font-family: 'Manrope', sans-serif; font-weight: 800;
+      line-height: 0.86; letter-spacing: -0.02em;
+      display: flex; flex-direction: column;
+    }
+    .hd-sm {
+      font-size: clamp(28px, 10vw, 44px);
+      text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+    }
+    .hd-lg {
+      font-size: clamp(56px, 20vw, 88px);
+      text-shadow: 0 2px 30px rgba(0,0,0,0.9);
+    }
+    .hd-md {
+      font-size: clamp(34px, 13vw, 54px);
+      text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+    }
+
+    /* ── NOTES ── */
+    .notes-wrap { margin-bottom: 10px; }
+    .notes-toggle {
+      display: flex; align-items: center; gap: 8px;
+      background: none; border: none; cursor: pointer;
+      color: var(--text-muted); padding: 8px 0;
+      font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 600;
+      letter-spacing: 0.4px; text-transform: uppercase;
+      transition: color 0.2s ease;
+    }
+    .notes-toggle:hover { color: var(--text-dim); }
+    .notes-toggle[aria-expanded="true"] { color: var(--text-dim); }
+    .notes-body {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .notes-body.open { max-height: 160px; }
+    .notes-input {
+      width: 100%; padding: 12px 14px;
+      background: var(--glass);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'Manrope', sans-serif; font-size: 14px;
+      resize: none; outline: none; min-height: 80px;
+      transition: border-color 0.25s ease;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .notes-input::placeholder { color: var(--text-muted); }
+    .notes-input:focus { border-color: rgba(255,255,255,0.22); }
+
+    /* note shown in history entry */
+    .log-entry-note {
+      font-size: 11px; color: var(--text-muted);
+      font-style: italic; margin-top: 4px;
+      grid-column: 2;
+    }
+
+    /* ═══════════════════════════════════════
        LOG VIEW
     ═══════════════════════════════════════ */
-    .log-header {
-      position: relative; text-align: center;
-      padding: 16px 0 22px; overflow: visible;
-    }
-    .glow-orb {
-      position: absolute; left: 50%; top: 50%;
-      transform: translate(-50%, -50%);
-      width: 240px; height: 72px; border-radius: 50%;
-      background: radial-gradient(ellipse, rgba(238,232,208,0.75) 0%, transparent 70%);
-      filter: blur(20px);
-      pointer-events: none;
-      animation: orb-pulse 4.5s ease-in-out infinite;
-      z-index: 0;
-    }
-    @keyframes orb-pulse {
-      0%,100% { opacity: 0.38; transform: translate(-50%,-50%) scale(1); }
-      50%      { opacity: 0.85; transform: translate(-50%,-50%) scale(1.22); }
-    }
-    .log-header h1 {
-      font-family: 'Lora', Georgia, serif;
-      font-size: 22px; font-weight: 600;
-      color: #2e2a24;
-      text-shadow: 0 1px 4px rgba(255,255,255,0.5);
-      position: relative; z-index: 1; margin-bottom: 4px;
-    }
-    .log-header .subtitle {
-      font-size: 13px; color: rgba(61,56,50,0.58);
-      text-shadow: 0 1px 2px rgba(255,255,255,0.3);
-      position: relative; z-index: 1;
-    }
     .timestamp-display {
       font-family: 'DM Mono', monospace;
-      font-size: 11px; color: rgba(61,56,50,0.4);
-      margin-top: 8px; letter-spacing: 0.3px;
-      position: relative; z-index: 1; display: block;
+      font-size: 11px; color: rgba(240,236,230,0.35);
+      letter-spacing: 0.3px; display: block;
+      text-align: center; padding: 10px 0 6px;
     }
 
     /* Tracker rows */
@@ -184,12 +196,21 @@
       border: 1.5px solid var(--border);
       border-radius: var(--radius);
       padding: 12px 14px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.65);
-      transition: border-color 0.5s ease, box-shadow 0.5s ease;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+      transition: border-color 0.45s ease, box-shadow 0.45s ease;
     }
-    .tracker-row.has-low  { border-color: var(--low);  box-shadow: 0 2px 14px var(--low-glow),  inset 0 1px 0 rgba(255,255,255,0.65); }
-    .tracker-row.has-mid  { border-color: var(--mid);  box-shadow: 0 2px 14px var(--mid-glow),  inset 0 1px 0 rgba(255,255,255,0.65); }
-    .tracker-row.has-full { border-color: var(--full); box-shadow: 0 2px 14px var(--full-glow), inset 0 1px 0 rgba(255,255,255,0.65); }
+    .tracker-row.has-low  {
+      border-color: var(--low);
+      box-shadow: 0 0 0 1px var(--low-glow), 0 0 28px var(--low-glow), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .tracker-row.has-mid  {
+      border-color: var(--mid);
+      box-shadow: 0 0 0 1px var(--mid-glow), 0 0 28px var(--mid-glow), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .tracker-row.has-full {
+      border-color: var(--full);
+      box-shadow: 0 0 0 1px var(--full-glow), 0 0 28px var(--full-glow), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
 
     .tracker-icon {
       width: 40px; height: 40px;
@@ -206,9 +227,9 @@
     .battery-wrap { display: flex; align-items: center; flex-shrink: 0; }
     .battery-body {
       display: flex;
-      border: 1.5px solid rgba(255,255,255,0.40);
-      border-radius: 7px; overflow: hidden;
-      height: 44px; background: rgba(255,255,255,0.18);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 0; overflow: hidden;
+      height: 44px; background: rgba(255,255,255,0.05);
       transition: border-color 0.45s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .segment {
@@ -255,7 +276,7 @@
     .segment.pressing { animation: press 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
     .battery-nub {
-      width: 5px; height: 18px; border-radius: 0 3px 3px 0;
+      width: 5px; height: 18px; border-radius: 0;
       background: rgba(255,255,255,0.35); margin-left: -1px; align-self: center;
       transition: background 0.45s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -271,20 +292,26 @@
       border: 1.5px solid var(--border); border-radius: var(--radius);
       background: var(--glass-deep);
       backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      color: rgba(61,56,50,0.38);
+      color: rgba(240,236,230,0.28);
       font-family: 'Manrope', sans-serif; font-size: 15px; font-weight: 600;
       cursor: pointer;
       transition: all 0.4s cubic-bezier(0.34, 1.2, 0.64, 1);
       letter-spacing: 0.2px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    @keyframes glow-pulse {
+      0%, 100% { box-shadow: 0 0 8px rgba(255,255,255,0.10), inset 0 1px 0 rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.30); }
+      50%       { box-shadow: 0 0 22px rgba(255,255,255,0.28), 0 0 48px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.60); }
     }
     .save-btn.ready {
-      background: var(--accent); border-color: transparent; color: #faf8f5;
-      box-shadow: 0 4px 18px rgba(154,179,194,0.4);
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.30);
+      color: #fff;
+      animation: glow-pulse 3.8s ease-in-out infinite;
     }
     .save-btn.saved {
-      background: var(--full); border-color: transparent; color: #faf8f5;
-      box-shadow: 0 4px 18px var(--full-glow);
+      background: rgba(98,184,136,0.18); border-color: var(--full); color: var(--full);
+      box-shadow: 0 0 20px var(--full-glow);
     }
 
     /* ═══════════════════════════════════════
@@ -297,47 +324,69 @@
       text-shadow: 0 1px 3px rgba(255,255,255,0.4);
     }
 
-    .filter-bar { display: flex; gap: 6px; margin-bottom: 10px; }
-    .filter-btn {
-      flex: 1; padding: 8px 6px; min-height: 44px;
-      border: 1.5px solid var(--border); border-radius: 10px;
-      background: var(--glass-deep);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      color: rgba(61,56,50,0.42);
-      font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 600;
-      cursor: pointer; transition: all 0.25s ease;
-      text-transform: uppercase; letter-spacing: 0.4px;
+    /* range select reuses .chart-dropdown-wrap / .chart-select */
+
+    /* Stat summary cards */
+    .stat-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 6px; margin-bottom: 12px;
     }
-    .filter-btn.active {
-      background: rgba(255,255,255,0.40); color: var(--text);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+    .stat-card {
+      background: var(--glass);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid var(--border); border-radius: 0;
+      padding: 10px 6px 8px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .stat-icon { line-height: 0; }
+    .stat-label {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.5px;
+      text-transform: uppercase; color: var(--text-dim);
+    }
+    .stat-pips { display: flex; gap: 3px; }
+    .stat-pip {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: rgba(255,255,255,0.22);
+      transition: background 0.3s ease;
+    }
+    .stat-pip.active[data-lvl="1"] { background: var(--low); }
+    .stat-pip.active[data-lvl="2"] { background: var(--mid); }
+    .stat-pip.active[data-lvl="3"] { background: var(--full); }
+    .stat-avg {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px; font-weight: 500; letter-spacing: 0.2px;
     }
 
-    /* Chart type selector */
-    .chart-selector {
-      display: flex; gap: 6px; margin-bottom: 12px;
+    /* Chart type dropdown */
+    .chart-dropdown-wrap {
+      position: relative; margin-bottom: 12px;
     }
-    .chart-type-btn {
-      flex: 1; padding: 8px; min-height: 44px;
-      border: 1.5px solid var(--border); border-radius: 10px;
+    .chart-select {
+      width: 100%; padding: 11px 40px 11px 14px; min-height: 44px;
+      border: 1.5px solid var(--border); border-radius: 0;
       background: var(--glass-deep);
       backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      color: rgba(61,56,50,0.42);
+      color: var(--text-dim);
+      font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 600;
       cursor: pointer; transition: all 0.25s ease;
-      display: flex; align-items: center; justify-content: center; gap: 5px;
-      font-family: 'Manrope', sans-serif; font-size: 11px; font-weight: 600;
-      letter-spacing: 0.3px; text-transform: uppercase;
+      appearance: none; -webkit-appearance: none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
     }
-    .chart-type-btn.active {
-      background: rgba(255,255,255,0.40); color: var(--text);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+    .chart-select:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+    .chart-select:focus-visible {
+      outline: 2px solid rgba(240,236,230,0.4); outline-offset: 2px;
+    }
+    .chart-select-arrow {
+      position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+      pointer-events: none; color: var(--text-dim);
     }
 
     /* Chart canvas */
     .chart-wrap {
       position: relative; width: 100%; margin-bottom: 10px;
       border-radius: var(--radius); overflow: hidden;
-      background: rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
       backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
       border: 1.5px solid var(--border);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
@@ -351,8 +400,8 @@
     }
     .legend-item {
       display: flex; align-items: center; gap: 5px;
-      font-size: 10px; font-weight: 600;
-      color: rgba(61,56,50,0.55);
+      font-size: 11px; font-weight: 600;
+      color: var(--text-dim);
       text-transform: uppercase; letter-spacing: 0.4px;
     }
     .legend-swatch {
@@ -361,8 +410,8 @@
 
     /* Summary */
     .history-summary {
-      font-family: 'DM Mono', monospace; font-size: 10px;
-      color: rgba(61,56,50,0.38); text-align: center;
+      font-family: 'DM Mono', monospace; font-size: 12px;
+      color: var(--text-dim); text-align: center;
       margin-bottom: 10px; letter-spacing: 0.2px;
     }
 
@@ -378,14 +427,14 @@
       display: flex; align-items: center; gap: 10px;
       background: var(--glass);
       backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      border: 1.5px solid var(--border); border-radius: 11px;
+      border: 1.5px solid var(--border); border-radius: 0;
       padding: 9px 11px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
     }
     .log-entry-time {
-      font-family: 'DM Mono', monospace; font-size: 10px;
-      color: rgba(61,56,50,0.42); white-space: nowrap; letter-spacing: 0.2px;
-      min-width: 80px;
+      font-family: 'DM Mono', monospace; font-size: 12px;
+      color: var(--text-dim); white-space: nowrap; letter-spacing: 0.2px;
+      min-width: 90px;
     }
     /* Category icon-level indicators */
     .entry-cats { display: flex; gap: 6px; flex: 1; }
@@ -403,8 +452,8 @@
     .entry-cat-dot.filled.lvl-3 { background: var(--full); }
 
     .log-entry-delete {
-      background: none; border: none; color: rgba(61,56,50,0.22);
-      font-size: 14px; cursor: pointer;
+      background: none; border: none; color: rgba(240,236,230,0.28);
+      font-size: 16px; cursor: pointer;
       padding: 0; min-width: 44px; min-height: 44px;
       display: flex; align-items: center; justify-content: center;
       line-height: 1; transition: color 0.2s; flex-shrink: 0;
@@ -413,22 +462,99 @@
 
     .empty-history {
       text-align: center; padding: 28px 0;
-      color: rgba(61,56,50,0.32); font-size: 13px; line-height: 1.7;
+      color: rgba(240,236,230,0.28); font-size: 13px; line-height: 1.7;
     }
 
-    /* Export */
+    /* Export — icon only */
     .export-btn {
-      width: 100%; padding: 13px;
-      border: 1.5px solid var(--border); border-radius: var(--radius);
+      align-self: flex-end;
+      width: 44px; height: 44px;
+      border: 1.5px solid var(--border); border-radius: 0;
       background: var(--glass-deep);
       backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      color: rgba(61,56,50,0.5);
-      font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 600;
+      color: var(--text-dim);
       cursor: pointer; transition: all 0.25s ease;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
-      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: center;
     }
-    .export-btn:hover { background: rgba(255,255,255,0.32); color: var(--text); }
+    .export-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+
+    /* ═══════════════════════════════════════
+       MONTHLY CALENDAR
+    ═══════════════════════════════════════ */
+    .cal-wrap { margin-bottom: 12px; }
+    .cal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 4px 0 8px;
+    }
+    .cal-title {
+      font-family: 'Manrope', sans-serif;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
+      text-transform: uppercase; color: var(--text-dim);
+    }
+    .cal-nav-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-muted); padding: 0;
+      min-width: 44px; min-height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 0; transition: color 0.2s, background 0.2s;
+    }
+    .cal-nav-btn:hover { color: var(--text); background: var(--glass); }
+    .cal-weekdays {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      margin-bottom: 4px;
+    }
+    .cal-weekdays span {
+      text-align: center; font-size: 9px; font-weight: 700;
+      color: var(--text-muted); letter-spacing: 0.6px;
+      text-transform: uppercase; padding: 2px 0;
+    }
+    .cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      gap: 3px; margin-bottom: 6px;
+    }
+    .cal-day {
+      aspect-ratio: 1;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border-radius: 0; border: 1.5px solid transparent;
+      background: none; cursor: pointer; gap: 2px; padding: 2px;
+      transition: background 0.2s, border-color 0.2s;
+      min-height: 40px;
+    }
+    .cal-day.empty { cursor: default; pointer-events: none; }
+    .cal-day:not(.empty):hover { background: var(--glass); }
+    .cal-day.today { border-color: rgba(255,255,255,0.18); }
+    .cal-day.selected { background: var(--glass); border-color: rgba(255,255,255,0.28); }
+    .cal-day.no-data { cursor: default; }
+    .cal-day-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px; font-weight: 500; color: var(--text-muted); line-height: 1;
+    }
+    .cal-day.today .cal-day-num { color: var(--text); font-weight: 700; }
+    .cal-day.has-data .cal-day-num { color: var(--text-dim); }
+    .cal-day.selected .cal-day-num { color: var(--text); }
+    .cal-day-pct {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px; font-weight: 500; line-height: 1;
+    }
+    /* Day detail panel */
+    .cal-detail {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .cal-detail.open { max-height: 500px; overflow-y: auto; }
+    .cal-detail.open::-webkit-scrollbar { width: 3px; }
+    .cal-detail.open::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.22); border-radius: 2px; }
+    .cal-detail-date {
+      font-family: 'Manrope', sans-serif;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+      text-transform: uppercase; color: var(--text-muted);
+      padding: 4px 0 8px;
+    }
+    .cal-detail-inner {
+      display: flex; flex-direction: column; gap: 7px;
+      padding-bottom: 6px;
+    }
 
     /* ═══════════════════════════════════════
        ACCESSIBILITY — FOCUS STATES
@@ -436,44 +562,37 @@
     .tab-btn:focus-visible,
     .segment:focus-visible,
     .filter-btn:focus-visible,
-    .chart-type-btn:focus-visible,
     .save-btn:focus-visible,
     .export-btn:focus-visible,
     .log-entry-delete:focus-visible {
-      outline: 2px solid rgba(61, 56, 50, 0.6);
+      outline: 2px solid rgba(240, 236, 230, 0.4);
       outline-offset: 2px;
     }
     .tab-btn:focus-visible,
     .filter-btn:focus-visible,
-    .chart-type-btn:focus-visible,
     .save-btn:focus-visible,
     .export-btn:focus-visible {
-      border-radius: 10px;
+      border-radius: 0;
     }
     .log-entry-delete:focus-visible {
-      border-radius: 6px;
+      border-radius: 0;
     }
     .segment:focus-visible {
       outline-offset: -2px;
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .bg-base { animation: none; }
-      .glow-orb { animation: none; }
-      .bg-overlay { transition: none; }
       .segment, .seg-pip, .tracker-row, .save-btn,
       .battery-body, .battery-nub { transition: none; }
       .segment.pressing { animation: none; }
+      .save-btn.ready { animation: none; }
     }
   </style>
 </head>
 <body>
 
-<!-- ── BACKGROUND LAYERS ── -->
+<!-- ── BACKGROUND ── -->
 <div class="bg-base"></div>
-<div class="bg-overlay" id="bg-low"></div>
-<div class="bg-overlay" id="bg-mid"></div>
-<div class="bg-overlay" id="bg-full"></div>
 
 <div class="app">
 
@@ -482,52 +601,58 @@
     <button class="tab-btn" data-tab="history" role="tab" aria-selected="false" aria-controls="view-history">History</button>
   </nav>
 
+  <div class="hero">
+    <video src="assets/hero.mp4" autoplay loop muted playsinline preload="metadata" aria-hidden="true"></video>
+    <div class="hero-date" id="hero-date" aria-hidden="true"></div>
+  </div>
+
   <!-- ── LOG VIEW ── -->
   <section id="view-log" class="view active" role="tabpanel" aria-labelledby="tab-log">
-    <header class="log-header">
-      <div class="glow-orb" aria-hidden="true"></div>
-      <h1>Energy Check-in</h1>
-      <p class="subtitle">How are you doing right now?</p>
-      <time class="timestamp-display" id="timestamp-display"></time>
-    </header>
     <div class="tracker-list" id="tracker-list" role="group" aria-label="Energy categories"></div>
+
+    <!-- Notes collapsible -->
+    <div class="notes-wrap">
+      <button class="notes-toggle" id="notes-toggle" type="button" aria-expanded="false" aria-controls="notes-body">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Add note
+      </button>
+      <div class="notes-body" id="notes-body" role="region">
+        <textarea class="notes-input" id="notes-input" placeholder="What's on your mind right now..." rows="3" aria-label="Session note"></textarea>
+      </div>
+    </div>
+
     <button class="save-btn" id="save-btn" disabled aria-live="polite">Log energy</button>
   </section>
 
   <!-- ── HISTORY VIEW ── -->
   <section id="view-history" class="view" role="tabpanel" aria-labelledby="tab-history">
-    <div class="history-header"><h2>Energy History</h2></div>
 
-    <div class="filter-bar">
-      <button class="filter-btn active" data-range="day">Day</button>
-      <button class="filter-btn" data-range="week">Week</button>
-      <button class="filter-btn" data-range="month">Month</button>
-      <button class="filter-btn" data-range="all">All</button>
+    <!-- Range dropdown -->
+    <div class="chart-dropdown-wrap">
+      <select class="chart-select" id="range-select" aria-label="Time range">
+        <option value="day">Past Day</option>
+        <option value="week">Past Week</option>
+        <option value="month">Past Month</option>
+        <option value="year">Past Year</option>
+      </select>
+      <svg class="chart-select-arrow" viewBox="0 0 10 6" width="10" height="6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M1 1l4 4 4-4"/>
+      </svg>
     </div>
 
-    <div class="chart-selector">
-      <button class="chart-type-btn active" data-chart="area">
-        <svg viewBox="0 0 18 12" width="18" height="12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M1 10 C3 10 4 3 6 3 S9 8 11 6 S14 2 17 4"/>
-        </svg>
-        Area
-      </button>
-      <button class="chart-type-btn" data-chart="bar">
-        <svg viewBox="0 0 18 12" width="18" height="12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="1" y="4"  width="3" height="8" rx="1"/>
-          <rect x="6" y="1"  width="3" height="11" rx="1"/>
-          <rect x="11" y="6" width="3" height="6" rx="1"/>
-          <rect x="15" y="3" width="2" height="9" rx="1"/>
-        </svg>
-        Bar
-      </button>
-      <button class="chart-type-btn" data-chart="radar">
-        <svg viewBox="0 0 18 18" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="9,1 17,9 9,17 1,9"/>
-          <polygon points="9,4 14,9 9,14 4,9" opacity="0.5"/>
-        </svg>
-        Radar
-      </button>
+    <!-- Stat summary cards -->
+    <div class="stat-row" id="stat-row"></div>
+
+    <!-- Chart type dropdown -->
+    <div class="chart-dropdown-wrap">
+      <select class="chart-select" id="chart-select" aria-label="Chart type">
+        <option value="area">Area Chart — trends over time</option>
+        <option value="bar">Bar Chart — compare entries</option>
+        <option value="radar">Radar Chart — balance view</option>
+      </select>
+      <svg class="chart-select-arrow" viewBox="0 0 10 6" width="10" height="6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M1 1l4 4 4-4"/>
+      </svg>
     </div>
 
     <div class="chart-wrap">
@@ -536,13 +661,32 @@
     </div>
 
     <p class="history-summary" id="history-summary" aria-live="polite"></p>
-    <div class="log-list" id="log-list"></div>
 
-    <button class="export-btn" id="export-btn">
-      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Monthly Calendar -->
+    <div class="cal-wrap" id="cal-wrap">
+      <div class="cal-header">
+        <button class="cal-nav-btn" id="cal-prev" type="button" aria-label="Previous month">
+          <svg viewBox="0 0 8 14" width="8" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 1L1 7l5 6"/></svg>
+        </button>
+        <span class="cal-title" id="cal-title"></span>
+        <button class="cal-nav-btn" id="cal-next" type="button" aria-label="Next month">
+          <svg viewBox="0 0 8 14" width="8" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 1l5 6-5 6"/></svg>
+        </button>
+      </div>
+      <div class="cal-weekdays" aria-hidden="true">
+        <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+      </div>
+      <div class="cal-grid" id="cal-grid" role="grid" aria-label="Calendar"></div>
+      <div class="cal-detail" id="cal-detail" aria-live="polite">
+        <div class="cal-detail-date" id="cal-detail-date"></div>
+        <div class="cal-detail-inner" id="cal-detail-inner"></div>
+      </div>
+    </div>
+
+    <button class="export-btn" id="export-btn" aria-label="Export CSV">
+      <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M2 11v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-2M8 2v8M5 7l3 3 3-3"/>
       </svg>
-      Export CSV
     </button>
   </section>
 
@@ -585,8 +729,8 @@ function makeSVG(id, size) {
   return svgs[id];
 }
 
-const CAT_COLORS  = { sensory:'#8aadbe', social:'#7aaa90', cognitive:'#c0a060', physical:'#be8880' };
-const LEVEL_COLOR = { 0:'transparent', 1:'#c2908a', 2:'#c4aa7d', 3:'#8db5a0' };
+const CAT_COLORS  = { sensory:'#6898a8', social:'#5a9272', cognitive:'#9a8a5c', physical:'#9a6e6c' };
+const LEVEL_COLOR = { 0:'transparent', 1:'#8a6e6c', 2:'#8a7e5c', 3:'#5a8a70' };
 const SEL_CLASS   = { 1:'sel-low', 2:'sel-mid', 3:'sel-full' };
 const ROW_CLASS   = { 1:'has-low',  2:'has-mid',  3:'has-full'  };
 
@@ -600,40 +744,30 @@ try { logs = JSON.parse(localStorage.getItem('battery-logs') || '[]'); } catch(e
 function saveLogs() { try { localStorage.setItem('battery-logs', JSON.stringify(logs)); } catch(e) {} }
 
 // ═══════════════════════════════════════════════
-// TIMESTAMP
+// EDITORIAL DATE DISPLAY
 // ═══════════════════════════════════════════════
-function formatNow() {
-  const d = new Date();
-  return d.toLocaleDateString('en-US',{ weekday:'long', month:'short', day:'numeric' })
-       + ' · '
-       + d.toLocaleTimeString('en-US',{ hour:'numeric', minute:'2-digit' });
+function updateHeroDate() {
+  const d    = new Date();
+  const mon  = d.toLocaleString('en-US',{month:'short'}).toUpperCase();
+  const day  = String(d.getDate()).padStart(2,'0');
+  const year = d.getFullYear();
+  const hr   = String(d.getHours() % 12 || 12).padStart(2,'0');
+  const min  = String(d.getMinutes()).padStart(2,'0');
+  const ampm = d.getHours() >= 12 ? 'PM' : 'AM';
+  const el   = document.getElementById('hero-date');
+  if (el) el.innerHTML =
+    `<span class="hd-sm">${mon}.</span>` +
+    `<span class="hd-lg">${day}</span>` +
+    `<span class="hd-sm">${year}</span>` +
+    `<span class="hd-md">${hr}:${min} ${ampm}</span>`;
 }
-function tickTimestamp() {
-  const el = document.getElementById('timestamp-display');
-  if (el) el.textContent = formatNow();
-}
-tickTimestamp();
-setInterval(tickTimestamp, 30_000);
+updateHeroDate();
+setInterval(updateHeroDate, 30_000);
 
-// ═══════════════════════════════════════════════
-// BACKGROUND REACTIVITY (smooth cross-fade)
-// ═══════════════════════════════════════════════
-const bgOverlays = {
-  low:  document.getElementById('bg-low'),
-  mid:  document.getElementById('bg-mid'),
-  full: document.getElementById('bg-full'),
-};
-
-function updateBackground() {
-  const vals = Object.values(current).filter(v => v !== null);
-  bgOverlays.low.classList.remove('visible');
-  bgOverlays.mid.classList.remove('visible');
-  bgOverlays.full.classList.remove('visible');
-  if (!vals.length) return;
-  const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
-  if      (avg >= 2.5)  bgOverlays.full.classList.add('visible');
-  else if (avg >= 1.75) bgOverlays.mid.classList.add('visible');
-  else                  bgOverlays.low.classList.add('visible');
+// Pause hero video if user prefers reduced motion
+if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const heroVid = document.querySelector('.hero video');
+  if (heroVid) heroVid.pause();
 }
 
 // ═══════════════════════════════════════════════
@@ -693,7 +827,6 @@ function onSelect(catId, level) {
   current[catId] = current[catId] === level ? null : level;
   refreshRow(catId);
   updateSaveBtn();
-  updateBackground();
 }
 
 function refreshRow(catId) {
@@ -721,16 +854,33 @@ function updateSaveBtn() {
 const trackerList = document.getElementById('tracker-list');
 CATEGORIES.forEach(cat => trackerList.appendChild(buildTrackerRow(cat)));
 
+// Notes toggle
+const notesToggle = document.getElementById('notes-toggle');
+const notesBody   = document.getElementById('notes-body');
+notesToggle.addEventListener('click', () => {
+  const open = notesBody.classList.toggle('open');
+  notesToggle.setAttribute('aria-expanded', String(open));
+  if (open) setTimeout(() => document.getElementById('notes-input').focus(), 50);
+});
+
 document.getElementById('save-btn').addEventListener('click', () => {
-  const entry = { timestamp: new Date().toISOString(), ...Object.fromEntries(CATEGORIES.map(c => [c.id, current[c.id]])) };
+  const note  = document.getElementById('notes-input').value.trim();
+  const entry = {
+    timestamp: new Date().toISOString(),
+    ...Object.fromEntries(CATEGORIES.map(c => [c.id, current[c.id]])),
+    ...(note ? { note } : {}),
+  };
   logs.unshift(entry);
   saveLogs();
+  // reset note
+  document.getElementById('notes-input').value = '';
+  notesBody.classList.remove('open');
+  notesToggle.setAttribute('aria-expanded', 'false');
   const btn = document.getElementById('save-btn');
   btn.className = 'save-btn saved';
   btn.textContent = 'Logged ✓';
   btn.disabled = true;
   CATEGORIES.forEach(c => { current[c.id] = null; refreshRow(c.id); });
-  updateBackground();
   setTimeout(() => { btn.className = 'save-btn'; btn.textContent = 'Log energy'; }, 2000);
   renderHistory(activeRange);
 });
@@ -742,7 +892,7 @@ let activeRange = 'day';
 let activeChart = 'area';
 
 function filterLogs(range) {
-  const cutoffs = { day: 86400000, week: 7*86400000, month: 30*86400000, all: null };
+  const cutoffs = { day: 86400000, week: 7*86400000, month: 30*86400000, year: 365*86400000 };
   const ms = cutoffs[range];
   if (!ms) return [...logs];
   const cutoff = Date.now() - ms;
@@ -752,9 +902,38 @@ function filterLogs(range) {
 function renderHistory(range) {
   activeRange = range;
   const entries = filterLogs(range);
-  renderLogList(entries);
+  renderStats(entries);
+  renderCalendar();
   drawChart(entries, activeChart);
   renderSummary(entries);
+}
+
+// ─── Per-category stat cards ─────────────────
+function renderStats(entries) {
+  const row = document.getElementById('stat-row');
+  row.innerHTML = '';
+  const lvlLabel = ['—', 'Low', 'Mid', 'Full'];
+  const lvlVarColor = [null, 'var(--low)', 'var(--mid)', 'var(--full)'];
+
+  CATEGORIES.forEach(cat => {
+    const vals = entries.map(e => e[cat.id]).filter(v => v);
+    const avg  = vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : null;
+    const lvl  = avg === null ? 0 : avg >= 2.5 ? 3 : avg >= 1.75 ? 2 : 1;
+
+    const pips = [1,2,3].map(i =>
+      `<span class="stat-pip${i <= lvl ? ' active' : ''}" data-lvl="${lvl}"></span>`
+    ).join('');
+
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+    card.innerHTML = `
+      <div class="stat-icon" style="color:${CAT_COLORS[cat.id]}">${makeSVG(cat.id, 18)}</div>
+      <div class="stat-label">${cat.label}</div>
+      <div class="stat-pips">${pips}</div>
+      <div class="stat-avg" style="color:${avg === null ? 'rgba(240,236,230,0.25)' : lvlVarColor[lvl]}">${avg === null ? '—' : Math.round(avg / 3 * 100) + '%'}</div>
+    `;
+    row.appendChild(card);
+  });
 }
 
 // ─── Log list (shape icons + dot indicators) ───
@@ -815,6 +994,14 @@ function renderLogList(entries) {
     el.appendChild(timeEl);
     el.appendChild(cats);
     el.appendChild(del);
+    if (entry.note) {
+      const noteEl = document.createElement('div');
+      noteEl.className = 'log-entry-note';
+      noteEl.style.cssText = 'grid-column:1/-1; font-size:11px; color:var(--text-muted); font-style:italic; padding-top:4px; width:100%;';
+      noteEl.textContent = entry.note;
+      el.style.flexWrap = 'wrap';
+      el.appendChild(noteEl);
+    }
     list.appendChild(el);
   });
 }
@@ -829,6 +1016,179 @@ function renderSummary(entries) {
   el.textContent = summary;
   document.getElementById('chart-canvas').setAttribute('aria-label',
     `Energy history ${activeChart} chart: ${summary}`);
+}
+
+// ═══════════════════════════════════════════════
+// MONTHLY CALENDAR
+// ═══════════════════════════════════════════════
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let selectedCalDay = null;
+
+function getLogsByDay() {
+  const map = {};
+  logs.forEach(entry => {
+    const d = new Date(entry.timestamp);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if (!map[key]) map[key] = [];
+    map[key].push(entry);
+  });
+  return map;
+}
+
+function dayAvgPct(entries) {
+  let sum = 0, count = 0;
+  entries.forEach(e => CATEGORIES.forEach(c => { if (e[c.id]) { sum += e[c.id]; count++; } }));
+  return count ? Math.round((sum / count) / 3 * 100) : null;
+}
+
+function renderCalendar() {
+  const today = new Date();
+  const todayY = today.getFullYear(), todayM = today.getMonth(), todayD = today.getDate();
+
+  document.getElementById('cal-title').textContent =
+    new Date(calYear, calMonth, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+
+  const byDay   = getLogsByDay();
+  const grid    = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  const firstDay   = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth= new Date(calYear, calMonth + 1, 0).getDate();
+
+  // Leading empty cells
+  for (let i = 0; i < firstDay; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'cal-day empty';
+    empty.setAttribute('role', 'gridcell');
+    grid.appendChild(empty);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key     = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const entries = byDay[key] || [];
+    const pct     = dayAvgPct(entries);
+    const isToday = (calYear === todayY && calMonth === todayM && d === todayD);
+    const isSel   = selectedCalDay === key;
+
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    cell.setAttribute('role', 'gridcell');
+    cell.className = 'cal-day'
+      + (entries.length ? ' has-data' : ' no-data')
+      + (isToday ? ' today' : '')
+      + (isSel   ? ' selected' : '');
+
+    const dateLabel = new Date(calYear, calMonth, d).toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    cell.setAttribute('aria-label', dateLabel + (entries.length ? `, ${entries.length} entr${entries.length>1?'ies':'y'}, ${pct}% avg` : ''));
+
+    const numEl = document.createElement('span');
+    numEl.className = 'cal-day-num';
+    numEl.textContent = d;
+    cell.appendChild(numEl);
+
+    if (pct !== null) {
+      const pctEl = document.createElement('span');
+      pctEl.className = 'cal-day-pct';
+      const lvl = pct >= 83 ? 'full' : pct >= 58 ? 'mid' : 'low';
+      pctEl.style.color = `var(--${lvl})`;
+      pctEl.textContent = pct + '%';
+      cell.appendChild(pctEl);
+    }
+
+    if (entries.length) {
+      cell.addEventListener('click', () => selectCalDay(key, entries, dateLabel));
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function selectCalDay(key, entries, dateLabel) {
+  const wasSelected = selectedCalDay === key;
+  selectedCalDay = wasSelected ? null : key;
+  renderCalendar();
+
+  const detail    = document.getElementById('cal-detail');
+  const inner     = document.getElementById('cal-detail-inner');
+  const detDate   = document.getElementById('cal-detail-date');
+
+  if (wasSelected || !entries.length) {
+    detail.classList.remove('open');
+    return;
+  }
+
+  detDate.textContent = dateLabel;
+  inner.innerHTML = '';
+
+  entries.forEach(entry => {
+    const el = document.createElement('div');
+    el.className = 'log-entry';
+
+    const d = new Date(entry.timestamp);
+    const timeEl = document.createElement('div');
+    timeEl.className = 'log-entry-time';
+    timeEl.textContent = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+    const cats = document.createElement('div');
+    cats.className = 'entry-cats';
+
+    CATEGORIES.forEach(cat => {
+      const lvl   = entry[cat.id] || 0;
+      const catEl = document.createElement('div');
+      catEl.className = 'entry-cat';
+
+      const iconEl = document.createElement('div');
+      iconEl.className = 'entry-cat-icon';
+      iconEl.style.color = CAT_COLORS[cat.id];
+      iconEl.innerHTML = makeSVG(cat.id, 14);
+
+      const dotsEl = document.createElement('div');
+      dotsEl.className = 'entry-cat-dots';
+      for (let i = 1; i <= 3; i++) {
+        const dot = document.createElement('span');
+        dot.className = 'entry-cat-dot' + (i <= lvl ? ` filled lvl-${lvl}` : '');
+        dotsEl.appendChild(dot);
+      }
+      catEl.appendChild(iconEl);
+      catEl.appendChild(dotsEl);
+      cats.appendChild(catEl);
+    });
+
+    const del = document.createElement('button');
+    del.className = 'log-entry-delete';
+    del.type = 'button';
+    del.setAttribute('aria-label', 'Delete entry');
+    del.innerHTML = '&times;';
+    del.addEventListener('click', () => {
+      const gi = logs.indexOf(entry);
+      if (gi !== -1) { logs.splice(gi, 1); saveLogs(); }
+      const remaining = entries.filter(e => e !== entry);
+      if (remaining.length) {
+        selectCalDay(key, remaining, dateLabel);
+      } else {
+        selectedCalDay = null;
+        detail.classList.remove('open');
+        renderCalendar();
+      }
+      renderHistory(activeRange);
+    });
+
+    el.appendChild(timeEl);
+    el.appendChild(cats);
+    el.appendChild(del);
+
+    if (entry.note) {
+      const noteEl = document.createElement('div');
+      noteEl.className = 'log-entry-note';
+      noteEl.style.cssText = 'grid-column:1/-1; font-size:11px; color:var(--text-muted); font-style:italic; padding-top:4px; width:100%;';
+      noteEl.textContent = entry.note;
+      el.style.flexWrap = 'wrap';
+      el.appendChild(noteEl);
+    }
+    inner.appendChild(el);
+  });
+
+  detail.classList.add('open');
 }
 
 // ═══════════════════════════════════════════════
@@ -974,8 +1334,7 @@ function drawBarChart(ctx, entries, W, H) {
       g.addColorStop(1, hexA(c, 0.35));
       ctx.fillStyle = g;
       ctx.beginPath();
-      const r = Math.min(barW/2, 4*devicePixelRatio);
-      ctx.roundRect(x, y, barW, barH, [r, r, 0, 0]);
+      ctx.roundRect(x, y, barW, barH, [0, 0, 0, 0]);
       ctx.fill();
 
       // Level color dot on top
@@ -1125,21 +1484,29 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-document.querySelectorAll('.filter-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderHistory(btn.dataset.range);
-  });
+document.getElementById('range-select').addEventListener('change', (e) => {
+  renderHistory(e.target.value);
 });
 
-document.querySelectorAll('.chart-type-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.chart-type-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activeChart = btn.dataset.chart;
-    resizeCanvas();
-  });
+document.getElementById('cal-prev').addEventListener('click', () => {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  selectedCalDay = null;
+  document.getElementById('cal-detail').classList.remove('open');
+  renderCalendar();
+});
+
+document.getElementById('cal-next').addEventListener('click', () => {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  selectedCalDay = null;
+  document.getElementById('cal-detail').classList.remove('open');
+  renderCalendar();
+});
+
+document.getElementById('chart-select').addEventListener('change', (e) => {
+  activeChart = e.target.value;
+  resizeCanvas();
 });
 
 // ═══════════════════════════════════════════════
